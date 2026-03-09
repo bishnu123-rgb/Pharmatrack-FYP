@@ -44,11 +44,14 @@ exports.createBatch = async (req, res) => {
 exports.getBatches = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT b.*, m.medicine_name, i.current_quantity
+      SELECT b.*, m.medicine_name, i.current_quantity, 
+             m.requires_prescription, m.dosage_form, m.strength, m.category_id,
+             COALESCE(c.category_name, 'General') as category_name
       FROM batches b
       JOIN medicines m ON b.medicine_id = m.medicine_id
+      LEFT JOIN categories c ON m.category_id = c.category_id
       LEFT JOIN inventory i ON b.batch_id = i.batch_id
-      ORDER BY b.batch_id DESC
+      ORDER BY b.expiry_date ASC
     `);
     res.json(result.rows);
   } catch (err) {

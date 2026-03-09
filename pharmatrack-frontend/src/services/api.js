@@ -54,11 +54,17 @@ export const refreshToken = async () => {
 const apiCall = async (endpoint, options = {}) => {
   let token = localStorage.getItem("token");
 
+  // Duck-type check for FormData to avoid cross-context instanceof failures
+  const isFormData = options.body && typeof options.body.append === "function";
+
   const headers = {
-    "Content-Type": "application/json",
     ...(token && { "Authorization": `Bearer ${token}` }),
     ...options.headers,
   };
+
+  if (!isFormData && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
 
   let res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
 
@@ -186,11 +192,11 @@ export const deleteCategory = (id) => apiCall(`/categories/${id}`, {
 export const getMedicines = () => apiCall("/medicines");
 export const createMedicine = (data) => apiCall("/medicines", {
   method: "POST",
-  body: JSON.stringify(data),
+  body: (data && typeof data.append === "function") ? data : JSON.stringify(data),
 });
 export const updateMedicine = (id, data) => apiCall(`/medicines/${id}`, {
   method: "PUT",
-  body: JSON.stringify(data),
+  body: (data && typeof data.append === "function") ? data : JSON.stringify(data),
 });
 export const deleteMedicine = (id) => apiCall(`/medicines/${id}`, {
   method: "DELETE",
@@ -211,9 +217,9 @@ export const deleteBatch = (id) => apiCall(`/batches/${id}`, {
 });
 
 // --- SALES ---
-export const createSale = (items) => apiCall("/sales", {
+export const createSale = (data) => apiCall("/sales", {
   method: "POST",
-  body: JSON.stringify({ items }),
+  body: JSON.stringify(data),
 });
 export const getSales = () => apiCall("/sales");
 
