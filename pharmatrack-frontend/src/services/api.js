@@ -249,3 +249,7 @@ export const updateSupplier = (id, data) => apiCall(`/suppliers/${id}`, {
 export const deleteSupplier = (id) => apiCall(`/suppliers/${id}`, {
   method: "DELETE",
 });
+
+export const toggleSupplierStatus = (id) => apiCall(`/suppliers/${id}/toggle-status`, {
+  method: "PATCH",
+});
