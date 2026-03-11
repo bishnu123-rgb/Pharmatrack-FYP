@@ -166,9 +166,12 @@ export const resetPassword = async (token, password) => {
 // --- USERS ---
 export const getProfile = () => apiCall("/users/profile");
 export const getUsers = () => apiCall("/users");
-export const updateUserStatus = (id, status) => apiCall(`/users/${id}/status`, {
+export const updateUser = (id, data) => apiCall(`/users/${id}/status`, {
   method: "PUT",
-  body: JSON.stringify({ status }),
+  body: JSON.stringify(data),
+});
+export const deleteUser = (id) => apiCall(`/users/${id}`, {
+  method: "DELETE",
 });
 
 // --- DASHBOARD ---
