@@ -90,7 +90,7 @@ const apiCall = async (endpoint, options = {}) => {
   }
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Action failed");
+  if (!res.ok) throw new Error(data.message || data.error || "Action failed");
   return data;
 };
 
@@ -172,6 +172,19 @@ export const updateUser = (id, data) => apiCall(`/users/${id}/status`, {
 });
 export const deleteUser = (id) => apiCall(`/users/${id}`, {
   method: "DELETE",
+});
+export const updateProfile = (data) => apiCall("/users/profile", {
+  method: "PUT",
+  body: JSON.stringify(data),
+});
+export const uploadAvatar = (formData) => apiCall("/users/avatar", {
+  method: "POST",
+  body: formData,
+  isForm: true, // Signal to not set Content-Type: application/json
+});
+export const changePassword = (data) => apiCall("/users/change-password", {
+  method: "PUT",
+  body: JSON.stringify(data),
 });
 
 // --- DASHBOARD ---
