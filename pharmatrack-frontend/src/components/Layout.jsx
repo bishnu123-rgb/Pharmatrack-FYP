@@ -26,10 +26,10 @@ const Layout = ({ children }) => {
 
     const navItems = [
         { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-        { name: "Medicine Repository", path: "/medicines", icon: Package },
-        { name: "Batch Inventory", path: "/batches", icon: Layers },
-        { name: "Sales Console", path: "/sales", icon: ShoppingCart },
-        { name: "Procurement", path: "/purchases", icon: FileText },
+        { name: "Medicines", path: "/medicines", icon: Package },
+        { name: "Batches", path: "/batches", icon: Layers },
+        { name: "Sales", path: "/sales", icon: ShoppingCart },
+        { name: "Purchases", path: "/purchases", icon: FileText },
         { name: "Supply Network", path: "/suppliers", icon: Truck },
         { name: "Resource Alerts", path: "/alerts", icon: AlertTriangle },
     ];
@@ -38,7 +38,7 @@ const Layout = ({ children }) => {
         navItems.push({ name: "User Registry", path: "/users", icon: Users });
     }
 
-    navItems.push({ name: "Officer Profile", path: "/profile", icon: UserCircle });
+    navItems.push({ name: "User Profile", path: "/profile", icon: UserCircle });
 
     return (
         <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
@@ -80,7 +80,7 @@ const Layout = ({ children }) => {
                         className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300"
                     >
                         <LogOut size={20} />
-                        Terminate Session
+                        Logout
                     </button>
                 </div>
             </aside>
