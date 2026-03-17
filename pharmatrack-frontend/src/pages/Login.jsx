@@ -109,9 +109,9 @@ const Login = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Username */}
+            {/* Username / Email */}
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Username</label>
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Username or Email</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
                   <User size={20} />
@@ -122,7 +122,7 @@ const Login = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full pl-16 pr-6 py-4 sm:py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all duration-300 shadow-sm"
-                  placeholder="e.g. bishnu_01"
+                  placeholder="e.g. bishnu_01 or user@example.com"
                   autoComplete="username"
                 />
               </div>
@@ -140,7 +140,7 @@ const Login = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-16 pr-14 py-4 sm:py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all duration-300 shadow-sm"
+                  className="w-full pl-16 pr-14 py-4 sm:py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all duration-300 shadow-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />

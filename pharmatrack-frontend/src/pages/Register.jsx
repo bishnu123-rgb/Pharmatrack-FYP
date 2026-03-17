@@ -541,7 +541,7 @@ const Register = () => {
                                     </div>
                                     <input type={showPassword ? "text" : "password"} required placeholder="••••••••"
                                         value={formData.password} onChange={e => update("password", e.target.value)}
-                                        className={`${inputCls} pl-14 pr-12`} autoComplete="new-password" />
+                                        className={`${inputCls} pl-14 pr-12 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden`} autoComplete="new-password" />
                                     <button type="button" tabIndex={-1}
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute inset-y-0 right-0 pr-5 flex items-center text-slate-400 hover:text-indigo-600 transition-colors">
@@ -576,7 +576,7 @@ const Register = () => {
                                     </div>
                                     <input type={showConfirm ? "text" : "password"} required placeholder="••••••••"
                                         value={formData.confirm_password} onChange={e => update("confirm_password", e.target.value)}
-                                        className={`${inputCls} pl-14 pr-12 ${passwordsMatch ? "border-emerald-300 focus:border-emerald-400" : passwordsMismatch ? "border-rose-300 focus:border-rose-400" : ""}`}
+                                        className={`${inputCls} pl-14 pr-12 ${passwordsMatch ? "border-emerald-300 focus:border-emerald-400" : passwordsMismatch ? "border-rose-300 focus:border-rose-400" : ""} [&::-ms-reveal]:hidden [&::-ms-clear]:hidden`}
                                         autoComplete="new-password" />
                                     <button type="button" tabIndex={-1}
                                         onClick={() => setShowConfirm(!showConfirm)}
