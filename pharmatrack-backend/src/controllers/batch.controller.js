@@ -44,7 +44,7 @@ exports.createBatch = async (req, res) => {
 exports.getBatches = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT b.*, m.medicine_name, i.current_quantity, 
+      SELECT b.*, m.medicine_name, m.image_url, i.current_quantity, 
              m.requires_prescription, m.dosage_form, m.strength, m.category_id,
              COALESCE(c.category_name, 'General') as category_name
       FROM batches b

@@ -1,7 +1,6 @@
 const nodemailer = require("nodemailer");
 
 /**
- * Professional Email Service for PharmaTrack
  * Configured for Gmail SMTP with App Passwords.
  */
 const transporter = nodemailer.createTransport({

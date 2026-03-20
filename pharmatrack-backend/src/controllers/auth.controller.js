@@ -5,8 +5,8 @@ const crypto = require("crypto");
 const { logActivity } = require("../utils/logger");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/email.service");
 
-// Temporary store for pending registrations (In-memory for FYP simplicity)
-// In a production app, use Redis or a 'pending_users' table
+// Temporary store for pending registrations
+
 const pendingRegistrations = new Map();
 
 const generateTokens = (user) => {
