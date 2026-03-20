@@ -239,6 +239,8 @@ export const createSale = (data) => apiCall("/sales", {
   body: JSON.stringify(data),
 });
 export const getSales = () => apiCall("/sales");
+export const getSalesStats = () => apiCall("/sales/stats");
+export const getSaleById = (id) => apiCall(`/sales/${id}`);
 
 // --- PURCHASES ---
 export const createPurchase = (data) => apiCall("/purchases", {

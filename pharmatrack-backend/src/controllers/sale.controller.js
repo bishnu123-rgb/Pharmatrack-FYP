@@ -91,3 +91,83 @@ exports.createSale = async (req, res) => {
     client.release();
   }
 };
+
+exports.getSales = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT s.*, u.username as sold_by_name
+      FROM sales s
+      LEFT JOIN users u ON s.created_by = u.user_id
+      ORDER BY s.sale_date DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("GET SALES ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getSaleById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get sale header
+    const saleResult = await pool.query(`
+      SELECT s.*, u.username as sold_by_name
+      FROM sales s
+      LEFT JOIN users u ON s.created_by = u.user_id
+      WHERE s.sale_id = $1
+    `, [id]);
+
+    if (saleResult.rows.length === 0) {
+      return res.status(404).json({ message: "Sale not found" });
+    }
+
+    // Get sale items with medicine details
+    const itemsResult = await pool.query(`
+      SELECT si.*, b.batch_number, m.medicine_name, m.dosage_form, m.strength
+      FROM sale_items si
+      JOIN batches b ON si.batch_id = b.batch_id
+      JOIN medicines m ON b.medicine_id = m.medicine_id
+      WHERE si.sale_id = $1
+    `, [id]);
+
+    res.json({
+      ...saleResult.rows[0],
+      items: itemsResult.rows
+    });
+  } catch (err) {
+    console.error("GET SALE BY ID ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getSalesStats = async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const statsResult = await pool.query(`
+      SELECT 
+        COALESCE(SUM(total_amount), 0) as daily_revenue,
+        COUNT(*) as transaction_count,
+        COALESCE((
+          SELECT m.medicine_name 
+          FROM sale_items si
+          JOIN batches b ON si.batch_id = b.batch_id
+          JOIN medicines m ON b.medicine_id = m.medicine_id
+          JOIN sales s ON si.sale_id = s.sale_id
+          WHERE s.sale_date::date = $1
+          GROUP BY m.medicine_name
+          ORDER BY SUM(si.quantity) DESC
+          LIMIT 1
+        ), 'None') as top_medicine
+      FROM sales 
+      WHERE sale_date::date = $1
+    `, [today]);
+
+    res.json(statsResult.rows[0]);
+  } catch (err) {
+    console.error("GET SALES STATS ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
