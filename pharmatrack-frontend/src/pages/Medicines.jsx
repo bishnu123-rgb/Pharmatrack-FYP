@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, X, Package, Loader2, AlertCircle, Eye, Search, FileDown, ShieldAlert, AlertTriangle, Filter, CheckCircle2, Zap } from "lucide-react";
-import { getMedicines, createMedicine, updateMedicine, deleteMedicine, getCategories } from "../services/api";
+import { Plus, Edit, Trash2, X, Package, Loader2, AlertCircle, Eye, Search, FileDown, ShieldAlert, AlertTriangle, Filter, CheckCircle2, Zap, LayoutGrid, List } from "lucide-react";
+import { getMedicines, createMedicine, updateMedicine, deleteMedicine, getCategories, IMAGE_BASE_URL } from "../services/api";
 
 const Medicines = () => {
     const [medicines, setMedicines] = useState([]);
@@ -20,9 +20,18 @@ const Medicines = () => {
     });
     const [error, setError] = useState("");
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [viewType, setViewType] = useState("grid"); // 'list', 'grid'
+    const [notifications, setNotifications] = useState([]);
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const canEdit = ["admin", "pharmacist"].includes(user.role);
+
+    // Toast Helper
+    const notify = (message, type = "success") => {
+        const id = Date.now();
+        setNotifications(prev => [...prev, { id, message, type }]);
+        setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
+    };
 
     useEffect(() => {
         fetchData();
@@ -81,6 +90,7 @@ const Medicines = () => {
             } else {
                 await createMedicine(submitData);
             }
+            notify(editId ? "Medicine updated successfully!" : "Medicine added to repository!");
             setModalOpen(false);
             setEditId(null);
             fetchData();
@@ -112,6 +122,7 @@ const Medicines = () => {
         if (!deleteConfirmId) return;
         try {
             await deleteMedicine(deleteConfirmId);
+            notify("Medicine archived successfully!");
             setDeleteConfirmId(null);
             fetchData();
         } catch (err) {
@@ -119,7 +130,14 @@ const Medicines = () => {
         }
     };
 
-    const getImageUrl = (url) => url?.startsWith("/uploads") ? `http://localhost:5000${url}` : url;
+    const getImageUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith("http") && !url.includes(IMAGE_BASE_URL)) return url;
+        // Normalize leading slash
+        const path = url.startsWith("/") ? url : `/${url}`;
+        // Add cache buster for database images
+        return `${IMAGE_BASE_URL}${path}?t=${Date.now()}`;
+    };
 
     const exportCSV = () => {
         if (!medicines.length) return;
@@ -193,6 +211,15 @@ const Medicines = () => {
                         <p className="text-slate-500 font-bold">Manage your pharmacy's medicine catalog, stock levels, and clinical data.</p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 mr-2 shadow-inner">
+                            <button onClick={() => setViewType("grid")} className={`p-2 rounded-xl transition-all duration-300 ${viewType === "grid" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`} title="Grid View">
+                                <LayoutGrid size={16} />
+                            </button>
+                            <button onClick={() => setViewType("list")} className={`p-2 rounded-xl transition-all duration-300 ${viewType === "list" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`} title="List View">
+                                <List size={16} />
+                            </button>
+                        </div>
+
                         <button onClick={exportCSV} className="flex items-center gap-2 bg-white text-slate-700 border border-slate-200 px-5 py-3 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-slate-50 hover:text-indigo-600 transition-colors shadow-sm active:scale-95">
                             <FileDown size={16} /> Export CSV
                         </button>
@@ -230,91 +257,154 @@ const Medicines = () => {
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{filteredMedicines.length} Item{filteredMedicines.length !== 1 ? 's' : ''} matched</span>
                 </div>
 
-                <div className="hidden md:block bg-white rounded-[2.5rem] premium-shadow border border-slate-100 overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/20 to-indigo-500/0"></div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[800px]">
-                            <thead className="bg-slate-50/50 border-b border-slate-100">
-                                <tr>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Medicine Info</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Group & Type</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Master Stock</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {filteredMedicines.map((med) => (
-                                    <tr key={med.medicine_id} className="group hover:bg-slate-50/50 transition-colors duration-300">
-                                        <td className="px-8 py-5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 shrink-0 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center relative">
-                                                    {med.image_url ?
-                                                        <img src={getImageUrl(med.image_url)} alt={med.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150?text=Rx"; }} /> :
-                                                        <Package className="text-slate-300" size={20} />
-                                                    }
-                                                    {med.requires_prescription && (
-                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center" title="Prescription Required">
-                                                            <ShieldAlert className="text-white" size={8} />
-                                                        </div>
+                {/* Dynamic View: Table (List) or Grid */}
+                {viewType === "list" ? (
+                    <div className="hidden md:block bg-white rounded-[2.5rem] premium-shadow border border-slate-100 overflow-hidden relative">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/20 to-indigo-500/0"></div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left min-w-[800px]">
+                                <thead className="bg-slate-50/50 border-b border-slate-100">
+                                    <tr>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Medicine Info</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Group & Type</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Master Stock</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {filteredMedicines.map((med) => (
+                                        <tr key={med.medicine_id} className="group hover:bg-slate-50/50 transition-colors duration-300">
+                                            <td className="px-8 py-5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 shrink-0 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center relative">
+                                                        {med.image_url ?
+                                                            <img src={getImageUrl(med.image_url)} alt={med.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150?text=Rx"; }} /> :
+                                                            <Package className="text-slate-300" size={20} />
+                                                        }
+                                                        {med.requires_prescription && (
+                                                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center" title="Prescription Required">
+                                                                <ShieldAlert className="text-white" size={8} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-base font-black text-slate-900 tracking-tight leading-tight flex items-center gap-2">
+                                                            <HighlightText text={med.name} highlight={searchTerm} />
+                                                            {med.requires_prescription && <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 rounded text-[8px] font-black uppercase tracking-widest border border-rose-100">RX</span>}
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider flex items-center gap-2">
+                                                            <span>Item ID: ITM-{med.medicine_id.toString().padStart(4, '0')}</span>
+                                                            {med.manufacturer && <span className="text-slate-300">•</span>}
+                                                            {med.manufacturer && <span><HighlightText text={med.manufacturer} highlight={searchTerm} /></span>}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <div className="space-y-1.5">
+                                                    <span className="inline-flex px-2 py-1 rounded bg-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-600 border border-slate-200">{med.category_name || "General"}</span>
+                                                    {(med.dosage_form || med.strength) && (
+                                                        <p className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5">
+                                                            {med.dosage_form} <span className="text-slate-300">•</span> {med.strength}
+                                                        </p>
                                                     )}
                                                 </div>
-                                                <div>
-                                                    <p className="text-base font-black text-slate-900 tracking-tight leading-tight flex items-center gap-2">
-                                                        <HighlightText text={med.name} highlight={searchTerm} />
-                                                        {med.requires_prescription && <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 rounded text-[8px] font-black uppercase tracking-widest border border-rose-100">RX</span>}
-                                                    </p>
-                                                    <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider flex items-center gap-2">
-                                                        <span>Item ID: ITM-{med.medicine_id.toString().padStart(4, '0')}</span>
-                                                        {med.manufacturer && <span className="text-slate-300">•</span>}
-                                                        {med.manufacturer && <span><HighlightText text={med.manufacturer} highlight={searchTerm} /></span>}
-                                                    </p>
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div className={`h-full rounded-full ${Number(med.total_stock) <= 10 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((Number(med.total_stock) / 200) * 100, 100)}%` }}></div>
+                                                    </div>
+                                                    <p className={`text-sm font-black tracking-tight ${Number(med.total_stock) <= 10 ? 'text-rose-600 animate-pulse' : 'text-slate-900'}`}>{med.total_stock || 0} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-0.5">Units</span></p>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <div className="space-y-1.5">
-                                                <span className="inline-flex px-2 py-1 rounded bg-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-600 border border-slate-200">{med.category_name || "General"}</span>
-                                                {(med.dosage_form || med.strength) && (
-                                                    <p className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5">
-                                                        {med.dosage_form} <span className="text-slate-300">•</span> {med.strength}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div className={`h-full rounded-full ${Number(med.total_stock) <= 10 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((Number(med.total_stock) / 200) * 100, 100)}%` }}></div>
+                                            </td>
+                                            <td className="px-8 py-5 text-right">
+                                                <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                                                    <button onClick={() => setViewingMed(med)} className="p-2.5 bg-white text-slate-500 hover:bg-slate-900 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95"><Eye size={16} /></button>
+                                                    {canEdit && (
+                                                        <>
+                                                            <button onClick={() => handleEdit(med)} className="p-2.5 bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95"><Edit size={16} /></button>
+                                                            {user.role === "admin" && (
+                                                                <button onClick={() => setDeleteConfirmId(med.medicine_id)} className="p-2.5 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95"><Trash2 size={16} /></button>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </div>
-                                                <p className={`text-sm font-black tracking-tight ${Number(med.total_stock) <= 10 ? 'text-rose-600 animate-pulse' : 'text-slate-900'}`}>{med.total_stock || 0} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-0.5">Units</span></p>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                                                <button onClick={() => setViewingMed(med)} className="p-2.5 bg-white text-slate-500 hover:bg-slate-900 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95"><Eye size={16} /></button>
-                                                {canEdit && (
-                                                    <>
-                                                        <button onClick={() => handleEdit(med)} className="p-2.5 bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95"><Edit size={16} /></button>
-                                                        {user.role === "admin" && (
-                                                            <button onClick={() => setDeleteConfirmId(med.medicine_id)} className="p-2.5 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95"><Trash2 size={16} /></button>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {filteredMedicines.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-                            <Package size={64} className="mb-6 opacity-20" />
-                            <p className="font-black text-lg text-slate-600">No Items Found</p>
-                            <p className="text-sm font-bold text-slate-400 mt-1">Try a different search or click "Add New Medicine".</p>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
-                </div>
+                        {filteredMedicines.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-24 text-slate-400">
+                                <Package size={64} className="mb-6 opacity-20" />
+                                <p className="font-black text-lg text-slate-600">No Items Found</p>
+                                <p className="text-sm font-bold text-slate-400 mt-1">Try a different search or click "Add New Medicine".</p>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="hidden md:grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {filteredMedicines.map((med) => (
+                            <div key={med.medicine_id} className="group bg-white rounded-[2.5rem] border border-slate-100 premium-shadow p-6 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl relative overflow-hidden backdrop-blur-sm">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-[4rem] -mr-8 -mt-8 transition-all group-hover:w-32 group-hover:h-32"></div>
+
+                                <div className="flex items-start gap-4 mb-6 relative">
+                                    <div className="w-20 h-20 bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center shadow-sm shrink-0">
+                                        {med.image_url ?
+                                            <img src={getImageUrl(med.image_url)} alt={med.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> :
+                                            <Package size={24} className="text-slate-200" />
+                                        }
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100">{med.category_name || "General"}</span>
+                                            {med.requires_prescription && <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-100">Prescription Required</span>}
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-900 mt-2 tracking-tight group-hover:text-indigo-600 transition-colors truncate">
+                                            <HighlightText text={med.name} highlight={searchTerm} />
+                                        </h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ITM-{med.medicine_id.toString().padStart(4, '0')} • {med.dosage_form || "N/A"}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 relative">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-[1.75rem] border border-slate-100">
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Master Stock</p>
+                                            <p className={`text-lg font-black tracking-tight ${Number(med.total_stock) <= 10 ? 'text-rose-600' : 'text-slate-800'}`}>{med.total_stock || 0} Units</p>
+                                        </div>
+                                        <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                                            <div className="relative w-8 h-8">
+                                                <svg className="w-full h-full" viewBox="0 0 36 36">
+                                                    <path className="text-slate-100" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                                                    <path className={Number(med.total_stock) <= 10 ? "text-rose-500" : "text-emerald-500"} strokeDasharray={`${Math.min((Number(med.total_stock) / 200) * 100, 100)}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setViewingMed(med)} className="flex-1 bg-white hover:bg-slate-900 hover:text-white text-slate-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-slate-200 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
+                                            <Eye size={14} /> View Profile
+                                        </button>
+                                        {canEdit && (
+                                            <button onClick={() => handleEdit(med)} className="p-3 bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95">
+                                                <Edit size={16} />
+                                            </button>
+                                        )}
+                                        {user.role === "admin" && (
+                                            <button onClick={() => setDeleteConfirmId(med.medicine_id)} className="p-3 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Mobile View: High-Fidelity Cards */}
                 <div className="md:hidden space-y-4">
@@ -359,11 +449,11 @@ const Medicines = () => {
                 </div>
             </div>
 
-            {/* Compact Fact Sheet Sheet */}
+            {/* Compact Fact Sheet */}
             {viewingMed && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-start pt-16 justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-200">
-                        {/* Header Fixed */}
+                        
                         <div className="p-5 border-b border-slate-100 flex items-start gap-4 bg-slate-50 relative shrink-0">
                             <button onClick={() => setViewingMed(null)} className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-900 bg-white rounded-lg shadow-sm border border-slate-200 transition-colors"><X size={16} /></button>
                             <div className="w-14 h-14 bg-white rounded-xl border border-slate-200 p-1 flex-shrink-0">
@@ -424,13 +514,13 @@ const Medicines = () => {
             )
             }
 
-            {/* Compact Edit Form Modal without Scrolling */}
+            
             {
                 modalOpen && (
                     <div className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-xl flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
                         <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl flex flex-col relative overflow-hidden">
 
-                            {/* Fixed Header */}
+                            
                             <div className="p-5 border-b border-slate-100 bg-white shrink-0 z-10 flex justify-between items-center">
                                 <div>
                                     <h2 className="text-xl font-black text-slate-900 tracking-tight">{editId ? "Update Medicine" : "Add New Medicine"}</h2>
@@ -439,7 +529,7 @@ const Medicines = () => {
                                 <button type="button" onClick={() => setModalOpen(false)} className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl transition-colors"><X size={18} /></button>
                             </div>
 
-                            {/* Static Form Body */}
+                            
                             <form id="medForm" onSubmit={handleSubmit} className="p-6 bg-white space-y-5">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="space-y-1 md:col-span-2">
@@ -498,11 +588,19 @@ const Medicines = () => {
                                         <div className="flex items-center gap-4">
                                             {(previewUrl || formData.image_url) && (
                                                 <div className="w-12 h-12 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 shrink-0">
-                                                    <img src={previewUrl || getImageUrl(formData.image_url)} alt="Preview" className="w-full h-full object-cover" />
+                                                    <img
+                                                        key={previewUrl || formData.image_url}
+                                                        src={previewUrl || getImageUrl(formData.image_url)}
+                                                        alt="Preview"
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Error"; }}
+                                                    />
                                                 </div>
                                             )}
                                             <div className="relative overflow-hidden flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus-within:border-indigo-400 flex items-center justify-between shadow-sm cursor-pointer hover:bg-slate-100 transition-colors">
-                                                <span className="text-sm font-bold text-slate-500 truncate">{formData.imageFile ? formData.imageFile.name : (formData.image_url ? "Change Photo..." : "Choose File...")}</span>
+                                                <span className="text-sm font-bold text-slate-500 truncate">
+                                                    {formData.imageFile ? formData.imageFile.name : (formData.image_url ? "Change Photo" : "Choose Photo")}
+                                                </span>
                                                 <input type="file" accept="image/*" onChange={(e) => setFormData({ ...formData, imageFile: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer" />
                                             </div>
                                         </div>
@@ -516,7 +614,7 @@ const Medicines = () => {
                                 {error && <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 text-center">{error}</div>}
                             </form>
 
-                            {/* Fixed Footer */}
+                            
                             <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 z-10 flex gap-3">
                                 <button type="button" onClick={() => setModalOpen(false)} className="flex-[0.5] py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors shadow-sm">Cancel</button>
                                 <button type="submit" form="medForm" className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
@@ -545,8 +643,29 @@ const Medicines = () => {
                         </div>
                     </div>
                 )}
+
+            {/* Notification Center */}
+            {notifications.length > 0 && <ToastOverlay notifications={notifications} />}
         </>
     );
 };
+
+
+const ToastOverlay = ({ notifications }) => (
+    <div className="fixed bottom-10 right-10 z-[300] flex flex-col items-end pointer-events-none">
+        {notifications.map(n => (
+            <div key={n.id} className={`flex items-center gap-3 px-6 py-4 rounded-3xl shadow-2xl border animate-in slide-in-from-right-10 duration-500 mb-4 backdrop-blur-xl pointer-events-auto min-w-[300px] ${n.type === "success" ? "bg-slate-900/90 border-slate-700 text-white" : "bg-rose-600 border-rose-500 text-white"
+                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${n.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-white/20 text-white"}`}>
+                    {n.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                </div>
+                <div>
+                    <p className="text-xs font-black uppercase tracking-widest opacity-50 mb-0.5">{n.type === "success" ? "System Success" : "Action Failed"}</p>
+                    <p className="text-[13px] font-bold tracking-tight">{n.message}</p>
+                </div>
+            </div>
+        ))}
+    </div>
+);
 
 export default Medicines;
