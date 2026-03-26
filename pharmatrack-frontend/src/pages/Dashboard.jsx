@@ -43,6 +43,7 @@ const StatCard = ({ title, value, icon: Icon, color, subtext, trend }) => (
 
 const Dashboard = () => {
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -109,7 +110,7 @@ const Dashboard = () => {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 space-y-10 pb-10">
-            {/* Elite Personalized Header */}
+            {/* Personalized Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div className="space-y-2">
                     <div className="flex items-center gap-3 text-indigo-600 font-black tracking-[0.2em] uppercase text-[10px] animate-pulse">
@@ -117,7 +118,7 @@ const Dashboard = () => {
                         Live Operations Active
                     </div>
                     <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">
-                        {getGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Admin</span>
+                        {getGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">{user.full_name?.split(' ')[0] || user.username}</span>
                     </h1>
                     <p className="text-slate-500 font-bold flex items-center gap-2 text-sm">
                         <Calendar size={14} className="text-slate-400" />
@@ -130,23 +131,23 @@ const Dashboard = () => {
 
                 {/* Unified Quick Actions */}
                 <div className="flex flex-wrap items-center gap-4">
-                    <button 
+                    <button
                         onClick={() => navigate('/sales')}
                         className="flex items-center gap-3 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-indigo-200"
                     >
                         <ShoppingBag size={18} />
                         New Sale
                     </button>
-                    <button 
+                    <button
                         onClick={() => navigate('/medicines')}
                         className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-sm hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm"
                     >
                         <PlusCircle size={18} />
                         Add Stock
                     </button>
-                    <button 
-                         onClick={() => navigate('/alerts')}
-                         className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-sm hover:border-amber-600 hover:text-amber-600 transition-all shadow-sm"
+                    <button
+                        onClick={() => navigate('/alerts')}
+                        className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-sm hover:border-amber-600 hover:text-amber-600 transition-all shadow-sm"
                     >
                         <AlertCircle size={18} />
                         View Alerts
@@ -211,12 +212,12 @@ const Dashboard = () => {
                                         <div className="absolute -top-10 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all pointer-events-none z-20 shadow-xl">
                                             NPR {sale.total.toLocaleString()}
                                         </div>
-                                        <div 
+                                        <div
                                             className="w-full max-w-[44px] bg-slate-50 group-hover/bar:bg-indigo-50 transition-all duration-500 rounded-2xl relative overflow-hidden"
                                             style={{ height: `${(sale.total / maxWeeklySale) * 180 + 30}px` }}
                                         >
-                                            <div 
-                                                className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-2xl opacity-80 group-hover/bar:opacity-100 transition-all duration-700 shadow-inner" 
+                                            <div
+                                                className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-2xl opacity-80 group-hover/bar:opacity-100 transition-all duration-700 shadow-inner"
                                                 style={{ height: sale.total > 0 ? `${(sale.total / maxWeeklySale) * 100}%` : '4px' }}
                                             ></div>
                                         </div>
@@ -259,7 +260,7 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         )}
-                        
+
                         {!stats?.low_stock_items && !stats?.expired_batches && (
                             <div className="flex flex-col items-center justify-center p-8 text-center opacity-40">
                                 <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mb-4">
@@ -292,8 +293,8 @@ const Dashboard = () => {
                     <div className="flex-1 space-y-4">
                         {stats.activities && stats.activities.length > 0 ? (
                             stats.activities.map((activity, idx) => (
-                                <div 
-                                    key={idx} 
+                                <div
+                                    key={idx}
                                     className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-100 hover:bg-slate-50/50 transition-all group scale-in"
                                     style={{ animationDelay: `${idx * 100}ms` }}
                                 >
@@ -334,7 +335,7 @@ const Dashboard = () => {
                         <TrendingUp size={120} />
                     </div>
                     <h3 className="text-xl font-black text-slate-900 mb-8 relative z-10">Fast-Moving Items</h3>
-                    
+
                     <div className="space-y-6 relative z-10 h-full">
                         {stats.fast_moving && stats.fast_moving.length > 0 ? (
                             stats.fast_moving.map((item, idx) => (
@@ -344,7 +345,7 @@ const Dashboard = () => {
                                         <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{item.sold} sold</span>
                                     </div>
                                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                        <div 
+                                        <div
                                             className="h-full bg-indigo-500 group-hover/item:bg-indigo-600 transition-all duration-1000 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.3)]"
                                             style={{ width: `${(item.sold / Math.max(...stats.fast_moving.map(m => m.sold))) * 100}%` }}
                                         ></div>

@@ -3,10 +3,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { logActivity } = require("../utils/logger");
-const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/email.service");
+const { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } = require("../services/email.service");
 
-// Temporary store for pending registrations
-
+// Temporary store for pending registrations (In-memory for FYP simplicity)
+// In a production app, use Redis or a 'pending_users' table
 const pendingRegistrations = new Map();
 
 const generateTokens = (user) => {
@@ -33,8 +33,11 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    const lowerEmail = email.toLowerCase();
+    const lowerUsername = username.toLowerCase();
+
     // Strict Gmail Validation
-    if (!email.toLowerCase().endsWith("@gmail.com")) {
+    if (!lowerEmail.endsWith("@gmail.com")) {
       return res.status(403).json({ message: "Only @gmail.com addresses are permitted for registration." });
     }
 
@@ -45,23 +48,33 @@ exports.register = async (req, res) => {
 
     // Check if user exists in DB
     const userExist = await pool.query(
-      "SELECT * FROM users WHERE username = $1 OR email = $2",
-      [username, email]
+      "SELECT * FROM users WHERE LOWER(username) = $1 OR LOWER(email) = $2",
+      [lowerUsername, lowerEmail]
     );
 
     if (userExist.rows.length > 0) {
-      return res.status(400).json({ message: "Username or Email already exists" });
+      return res.status(400).json({ message: "Username or Email already exists." });
+    }
+
+    // Check if already in pending registrations
+    const pending = pendingRegistrations.get(lowerEmail);
+    if (pending && pending.expires > Date.now()) {
+      return res.status(400).json({ message: "Registration already in progress. Please check your email for the code." });
     }
 
     // Generate 6-digit verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // SECURITY: Hash password BEFORE storing in temporary memory
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
     // Store pending data
-    pendingRegistrations.set(email, {
+    pendingRegistrations.set(lowerEmail, {
       username,
-      password,
+      passwordHash,
       full_name,
-      email,
+      email: lowerEmail, // explicitly save as lowercase
       role_name: role_name || 'staff',
       code: verificationCode,
       expires: Date.now() + 600000 // 10 minutes
@@ -70,12 +83,10 @@ exports.register = async (req, res) => {
     // Send Real Email if configured
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        await sendVerificationEmail(email, verificationCode);
+        await sendVerificationEmail(lowerEmail, verificationCode);
       }
     } catch (mailErr) {
       console.error("MAIL SEND ERROR:", mailErr);
-      // Even if mail fails, we return success so user can see the dev console if needed
-      // but in real app we'd error out.
     }
 
     res.status(200).json({
@@ -93,7 +104,8 @@ exports.register = async (req, res) => {
 exports.verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
-    const pending = pendingRegistrations.get(email);
+    const lowerEmail = email.toLowerCase();
+    const pending = pendingRegistrations.get(lowerEmail);
 
     if (!pending) {
       return res.status(400).json({ message: "No pending registration found for this email." });
@@ -104,30 +116,36 @@ exports.verifyEmail = async (req, res) => {
     }
 
     if (Date.now() > pending.expires) {
-      pendingRegistrations.delete(email);
+      pendingRegistrations.delete(lowerEmail);
       return res.status(400).json({ message: "Verification code expired." });
     }
 
     // Code is valid! Create the user in DB
-    const { username, password, full_name, role_name } = pending;
+    const { username, passwordHash, full_name, role_name } = pending;
 
     // Get role_id
     const roleResult = await pool.query("SELECT role_id FROM roles WHERE role_name = $1", [role_name]);
     const roleId = roleResult.rows[0]?.role_id || 2; // Default to staff
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
     const newUser = await pool.query(
       `INSERT INTO users (username, password_hash, full_name, email, role_id, status)
        VALUES ($1, $2, $3, $4, $5, 'active')
        RETURNING user_id, username, full_name, email`,
-      [username, passwordHash, full_name, email, roleId]
+      [username, passwordHash, full_name, lowerEmail, roleId]
     );
 
     // Clear pending
-    pendingRegistrations.delete(email);
+    pendingRegistrations.delete(lowerEmail);
+
+    // Send Welcome Email
+    try {
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        await sendWelcomeEmail(lowerEmail, full_name);
+        console.log(`✅ WELCOME EMAIL SENT TO: ${lowerEmail}`);
+      }
+    } catch (mailErr) {
+      console.error("WELCOME MAIL ERROR:", mailErr);
+    }
 
     res.status(201).json({
       message: "Email verified and account created successfully",
@@ -143,7 +161,8 @@ exports.verifyEmail = async (req, res) => {
 exports.resendVerificationCode = async (req, res) => {
   try {
     const { email } = req.body;
-    const pending = pendingRegistrations.get(email);
+    const lowerEmail = email.toLowerCase();
+    const pending = pendingRegistrations.get(lowerEmail);
 
     if (!pending) {
       return res.status(400).json({ message: "No pending registration found for this email." });
@@ -157,7 +176,7 @@ exports.resendVerificationCode = async (req, res) => {
     // Resend Email
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        await sendVerificationEmail(email, newCode);
+        await sendVerificationEmail(lowerEmail, newCode);
       }
     } catch (mailErr) {
       console.error("RESEND MAIL ERROR:", mailErr);

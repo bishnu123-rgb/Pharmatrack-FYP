@@ -32,7 +32,7 @@ const Purchases = () => {
 
     const [items, setItems] = useState([]);
     const [supplierId, setSupplierId] = useState("");
-    const [invoiceNo, setInvoiceNo] = useState("INV-XXX-000");
+    const [invoiceNo, setInvoiceNo] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
 
     const [loading, setLoading] = useState(true);
@@ -41,6 +41,17 @@ const Purchases = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
+    const [lastPurchaseData, setLastPurchaseData] = useState(null);
+
+    // Auto-Print GRN (Goods Receipt Note) Logic
+    useEffect(() => {
+        if (success && lastPurchaseData) {
+            const timer = setTimeout(() => {
+                window.print();
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [success, lastPurchaseData]);
 
     useEffect(() => {
         const init = async () => {
@@ -75,6 +86,26 @@ const Purchases = () => {
     useEffect(() => {
         if (activeView === "history") loadHistory();
     }, [activeView, loadHistory]);
+
+    const handleExportCSV = () => {
+        if (history.length === 0) return;
+        const headers = ["Invoice No", "Supplier", "Total Amount", "Purchase Date"];
+        const rows = history.map(p => [
+            p.invoice_no,
+            `"${p.supplier_name}"`,
+            p.total_amount,
+            formatDate(p.purchase_date)
+        ]);
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `pharmatrack_purchases_${todayISO()}.csv`;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const addRestockItem = (batch) => {
         if (items.find(i => i._key === `b-${batch.batch_id}`)) return;
@@ -114,7 +145,7 @@ const Purchases = () => {
     const handlePurchase = async () => {
         setError("");
         if (!supplierId) return setError("Please select a supplier.");
-        if (invoiceNo === "INV-XXX-000") return setError("Enter a valid invoice number.");
+        if (!invoiceNo.trim()) return setError("Enter a valid invoice number.");
         if (items.length === 0) return setError("Add items to your manifest.");
 
         for (const item of items) {
@@ -135,12 +166,18 @@ const Purchases = () => {
                 }))
             };
             await createPurchase(payload);
-            setSuccessMsg(`✅ Purchase recorded — NPR ${total.toLocaleString()}`);
+            setLastPurchaseData({
+                ...payload,
+                supplierName: suppliers.find(s => s.supplier_id === supplierId)?.supplier_name || "Unknown Supplier",
+                date: new Date().toLocaleString(),
+                total: total
+            });
+            setSuccessMsg(`Purchase recorded — NPR ${total.toLocaleString()}`);
             setSuccess(true);
             setItems([]);
-            setInvoiceNo("INV-XXX-000");
+            setInvoiceNo("");
+            setSupplierId(""); // Reset supplier ID to "Select Supplier"
             loadHistory();
-            setTimeout(() => setSuccess(false), 5000);
         } catch (err) {
             setError(err.message || "Failed to record purchase");
         } finally {
@@ -151,6 +188,85 @@ const Purchases = () => {
     if (loading) return (
         <div className="flex h-[60vh] items-center justify-center">
             <Loader2 className="animate-spin text-indigo-600" size={32} />
+        </div>
+    );
+
+    if (success) return (
+        <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-8 animate-in zoom-in-95 duration-500">
+            <div className="w-24 h-24 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center text-emerald-500 shadow-xl shadow-emerald-100 border-2 border-emerald-100">
+                <CheckCircle size={48} className="animate-bounce" />
+            </div>
+            <div className="space-y-3">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">Delivery Recorded!</h2>
+                <p className="text-slate-500 font-bold max-w-sm mx-auto">
+                    Invoice <span className="text-indigo-600">#{lastPurchaseData?.invoice_no}</span> has been processed successfully.
+                </p>
+            </div>
+            <div className="flex gap-4">
+                <button
+                    onClick={() => { setSuccess(false); setLastPurchaseData(null); }}
+                    className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-indigo-100 active:scale-95"
+                >
+                    New Delivery
+                </button>
+                <button
+                    onClick={() => window.print()}
+                    className="px-10 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[1.5rem] font-black text-sm transition-all flex items-center gap-2"
+                >
+                    Print GRN <FileText size={16} />
+                </button>
+            </div>
+
+            {/* Hidden Printable Goods Receipt Note (GRN) */}
+            {lastPurchaseData && (
+                <div className="hidden print:block fixed inset-0 bg-white p-8 text-slate-900 z-[9999] overflow-y-auto">
+                    <div className="max-w-[400px] mx-auto space-y-6">
+                        <div className="text-center space-y-2 border-b-2 border-slate-100 pb-6">
+                            <h1 className="text-2xl font-black tracking-tight text-indigo-600">PHARMATRACK</h1>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Goods Receipt Note (GRN)</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Supplier</p>
+                                <p className="font-black text-slate-800">{lastPurchaseData.supplierName}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Purchase Info</p>
+                                <p className="font-black text-slate-800">REF: {lastPurchaseData.invoice_no}</p>
+                                <p className="font-bold text-slate-500">{lastPurchaseData.date}</p>
+                            </div>
+                        </div>
+                        <table className="w-full text-xs">
+                            <thead>
+                                <tr className="border-b-2 border-slate-100">
+                                    <th className="py-3 text-left font-black text-slate-400 uppercase tracking-widest text-[9px]">Item Name</th>
+                                    <th className="py-3 text-center font-black text-slate-400 uppercase tracking-widest text-[9px]">Qty</th>
+                                    <th className="py-3 text-right font-black text-slate-400 uppercase tracking-widest text-[9px]">Unit Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {lastPurchaseData.items.map((item, idx) => (
+                                    <tr key={idx} className="border-b border-slate-50">
+                                        <td className="py-3 font-black text-slate-800">{item.medicine_name}</td>
+                                        <td className="py-3 text-center font-bold">{item.quantity}</td>
+                                        <td className="py-3 text-right font-black">NPR {item.unit_cost}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div className="pt-4 space-y-2 border-t-2 border-slate-100">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="font-black text-slate-400 uppercase tracking-widest text-[10px]">Total Investment</span>
+                                <span className="text-xl font-black text-indigo-600">NPR {lastPurchaseData.total.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <div className="text-center pt-8 opacity-50">
+                            <p className="text-[10px] font-black uppercase tracking-widest">Authorized Warehouse Entry</p>
+                            <p className="text-[8px] font-bold text-slate-400 mt-1">Generated by PharmaTrack Procurement System</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 
@@ -182,7 +298,7 @@ const Purchases = () => {
                         <div className="bg-white rounded-[2.5rem] premium-shadow p-8 border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Invoice Number</label>
-                                <input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-200 font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10" />
+                                <input placeholder="INV-XXX-000" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-200 font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Supplier</label>
@@ -299,28 +415,36 @@ const Purchases = () => {
                     </div>
                 </div>
             ) : (
-                <div className="bg-white rounded-[2.5rem] premium-shadow border border-slate-100 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-100">
-                                <tr>
-                                    <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400">Invoice</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400">Supplier</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400 text-right">Amount</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400 text-right">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {history.map(p => (
-                                    <tr key={p.purchase_id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-8 py-5 font-black text-slate-800">{p.invoice_no}</td>
-                                        <td className="px-8 py-5 text-slate-600 font-bold">{p.supplier_name}</td>
-                                        <td className="px-8 py-5 text-right font-black text-slate-900">NPR {Number(p.total_amount).toLocaleString()}</td>
-                                        <td className="px-8 py-5 text-right text-slate-500 font-bold">{formatDate(p.purchase_date)}</td>
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center sm:flex-row flex-col gap-4">
+                        <h2 className="text-xl font-black text-slate-900">Delivery History</h2>
+                        <button onClick={handleExportCSV} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95">
+                            <FileText size={14} /> Download CSV Report
+                        </button>
+                    </div>
+                    <div className="bg-white rounded-[2.5rem] premium-shadow border border-slate-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400">Invoice</th>
+                                        <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400">Supplier</th>
+                                        <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400 text-right">Amount</th>
+                                        <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400 text-right">Date</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {history.map(p => (
+                                        <tr key={p.purchase_id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-8 py-5 font-black text-slate-800">{p.invoice_no}</td>
+                                            <td className="px-8 py-5 text-slate-600 font-bold">{p.supplier_name}</td>
+                                            <td className="px-8 py-5 text-right font-black text-slate-900">NPR {Number(p.total_amount).toLocaleString()}</td>
+                                            <td className="px-8 py-5 text-right text-slate-500 font-bold">{formatDate(p.purchase_date)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}

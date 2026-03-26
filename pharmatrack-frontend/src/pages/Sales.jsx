@@ -24,6 +24,16 @@ const Sales = () => {
     const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [historySearchTerm, setHistorySearchTerm] = useState("");
 
+    // Auto-Print Invoice Logic
+    useEffect(() => {
+        if (success && lastSaleData) {
+            const timer = setTimeout(() => {
+                window.print();
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [success, lastSaleData]);
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -225,7 +235,7 @@ const Sales = () => {
                 </button>
             </div>
 
-            
+
             {lastSaleData && (
                 <div className="hidden print:block fixed inset-0 bg-white p-8 text-slate-900 z-[9999] overflow-y-auto">
                     <div className="max-w-[400px] mx-auto space-y-6">
@@ -315,7 +325,7 @@ const Sales = () => {
     return (
         <>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
-                
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
                     <div className="space-y-1">
                         <h1 className="text-4xl font-black text-slate-900 tracking-tight">Pharmacy Counter</h1>
@@ -733,7 +743,7 @@ const Sales = () => {
             {selectedSale && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
                     <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-                        
+
                         <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                             <div>
                                 <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight transition-colors">Sale Fact Sheet</h2>
@@ -744,7 +754,7 @@ const Sales = () => {
                             </button>
                         </div>
 
-                        
+
                         <div className="p-6 overflow-y-auto space-y-6">
                             {/* Customer Info Card: Tighter */}
                             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
@@ -760,7 +770,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            
+
                             <div className="space-y-3">
                                 <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Detailed Itemization</h3>
                                 <div className="space-y-2">
@@ -789,7 +799,7 @@ const Sales = () => {
                             </div>
                         </div>
 
-                        
+
                         <div className="px-6 py-5 border-t border-slate-50 bg-slate-50/50 flex items-center justify-between">
                             <div>
                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Amount Due</p>

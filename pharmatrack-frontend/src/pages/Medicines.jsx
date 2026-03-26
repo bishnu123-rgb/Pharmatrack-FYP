@@ -449,11 +449,11 @@ const Medicines = () => {
                 </div>
             </div>
 
-            {/* Compact Fact Sheet */}
+            {/* Fact Sheet */}
             {viewingMed && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-start pt-16 justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-200">
-                        
+                        {/* Header */}
                         <div className="p-5 border-b border-slate-100 flex items-start gap-4 bg-slate-50 relative shrink-0">
                             <button onClick={() => setViewingMed(null)} className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-900 bg-white rounded-lg shadow-sm border border-slate-200 transition-colors"><X size={16} /></button>
                             <div className="w-14 h-14 bg-white rounded-xl border border-slate-200 p-1 flex-shrink-0">
@@ -505,7 +505,7 @@ const Medicines = () => {
 
                             {viewingMed.requires_prescription && (
                                 <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-black text-rose-600">
-                                    <ShieldAlert size={16} /> Prescription Strongly Required for Dispensing
+                                    <ShieldAlert size={16} /> Prescription Required
                                 </div>
                             )}
                         </div>
@@ -514,13 +514,13 @@ const Medicines = () => {
             )
             }
 
-            
+            {/* Edit Form Modal*/}
             {
                 modalOpen && (
                     <div className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-xl flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
                         <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl flex flex-col relative overflow-hidden">
 
-                            
+                            {/* Header */}
                             <div className="p-5 border-b border-slate-100 bg-white shrink-0 z-10 flex justify-between items-center">
                                 <div>
                                     <h2 className="text-xl font-black text-slate-900 tracking-tight">{editId ? "Update Medicine" : "Add New Medicine"}</h2>
@@ -529,7 +529,7 @@ const Medicines = () => {
                                 <button type="button" onClick={() => setModalOpen(false)} className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl transition-colors"><X size={18} /></button>
                             </div>
 
-                            
+                            {/* Form Body */}
                             <form id="medForm" onSubmit={handleSubmit} className="p-6 bg-white space-y-5">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="space-y-1 md:col-span-2">
@@ -614,7 +614,7 @@ const Medicines = () => {
                                 {error && <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 text-center">{error}</div>}
                             </form>
 
-                            
+                            {/* Fixed Footer */}
                             <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 z-10 flex gap-3">
                                 <button type="button" onClick={() => setModalOpen(false)} className="flex-[0.5] py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors shadow-sm">Cancel</button>
                                 <button type="submit" form="medForm" className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
@@ -650,7 +650,7 @@ const Medicines = () => {
     );
 };
 
-
+// Floating Notifications Component
 const ToastOverlay = ({ notifications }) => (
     <div className="fixed bottom-10 right-10 z-[300] flex flex-col items-end pointer-events-none">
         {notifications.map(n => (

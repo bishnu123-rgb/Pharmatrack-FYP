@@ -11,7 +11,7 @@ exports.getSuppliers = async (req, res) => {
             FROM suppliers s
             LEFT JOIN purchases p ON s.supplier_id = p.supplier_id
             GROUP BY s.supplier_id
-            ORDER BY s.is_active DESC, s.supplier_name ASC
+            ORDER BY s.is_active DESC, s.supplier_id DESC
         `);
         res.json(result.rows);
     } catch (err) {

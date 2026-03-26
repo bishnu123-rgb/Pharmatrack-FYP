@@ -183,6 +183,12 @@ exports.deleteUser = async (req, res) => {
         await pool.query("DELETE FROM users WHERE user_id = $1", [id]);
         res.json({ message: "User deleted successfully" });
     } catch (err) {
+        // Handle Foreign Key Constraint Violation (e.g., user created sales/purchases/batches)
+        if (err.code === '23503') {
+            return res.status(400).json({
+                error: "This user has recorded operational transactions (Sales, Purchases, etc.). Permanent deletion is blocked to preserve accounting integrity. Please deactivate their access role instead."
+            });
+        }
         res.status(500).json({ error: err.message });
     }
 };
