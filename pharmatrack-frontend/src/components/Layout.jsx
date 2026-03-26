@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useNavigate, NavLink } from "react-router-dom";
 import {
     LayoutDashboard,
@@ -16,7 +17,16 @@ import {
 
 const Layout = ({ children }) => {
     const navigate = useNavigate();
-    const userStr = localStorage.getItem("user");
+    const [userStr, setUserStr] = useState(localStorage.getItem("user"));
+
+    useEffect(() => {
+        const handleUserUpdate = () => {
+            setUserStr(localStorage.getItem("user"));
+        };
+        window.addEventListener("userUpdated", handleUserUpdate);
+        return () => window.removeEventListener("userUpdated", handleUserUpdate);
+    }, []);
+
     const user = userStr ? JSON.parse(userStr) : { username: "User", role: "staff" };
 
     const handleLogout = () => {

@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -13,6 +14,8 @@ import UserManagement from "./pages/UserManagement";
 import Suppliers from "./pages/Suppliers";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import StoreLanding from "./pages/store/StoreLanding";
+import MedicineDetail from "./pages/store/MedicineDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Layout from "./components/Layout";
@@ -20,6 +23,7 @@ import Layout from "./components/Layout";
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -136,6 +140,10 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Public Customer Store Routes (No Login Required) */}
+        <Route path="/store" element={<StoreLanding />} />
+        <Route path="/store/medicine/:id" element={<MedicineDetail />} />
 
         {/* Default route */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

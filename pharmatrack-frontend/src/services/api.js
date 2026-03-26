@@ -272,3 +272,27 @@ export const deleteSupplier = (id) => apiCall(`/suppliers/${id}`, {
 export const toggleSupplierStatus = (id) => apiCall(`/suppliers/${id}/toggle-status`, {
   method: "PATCH",
 });
+
+// ─── PUBLIC STORE API (No auth required) ──────────────────────────────────────
+const STORE_BASE = "http://localhost:5000/api/store";
+
+export const getStoreMedicines = () =>
+  fetch(`${STORE_BASE}/medicines`).then(r => r.json());
+
+export const getStoreMedicineDetail = (id) =>
+  fetch(`${STORE_BASE}/medicines/${id}`).then(r => {
+    if (!r.ok) throw new Error("Medicine not found");
+    return r.json();
+  });
+
+export const getStoreCategories = () =>
+  fetch(`${STORE_BASE}/categories`).then(r => r.json());
+
+export const notifyStock = (data) =>
+  fetch(`${STORE_BASE}/notify-stock`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  }).then(r => r.json());
+
+

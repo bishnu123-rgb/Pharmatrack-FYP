@@ -13,6 +13,7 @@ const alertRoutes = require("./routes/alert.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const userRoutes = require("./routes/user.routes");
 const supplierRoutes = require("./routes/supplier.routes");
+const storeRoutes = require("./routes/store.routes");
 
 const app = express();
 
@@ -21,9 +22,11 @@ app.use((req, res, next) => {
   next();
 });
 
+const path = require("path");
 
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -35,6 +38,7 @@ app.use("/api/alerts", alertRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/suppliers", supplierRoutes);
+app.use("/api/store", storeRoutes);
 
 
 app.get("/", (req, res) => {
