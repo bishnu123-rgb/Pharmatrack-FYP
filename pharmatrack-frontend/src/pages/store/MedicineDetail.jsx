@@ -260,6 +260,7 @@ const MedicineDetail = () => {
                         )}
                     </div>
 
+
                     {/* WhatsApp CTA or Notify Form */}
                     {medicine.availability !== "out_of_stock" ? (
                         <a href={`https://wa.me/9779800000000?text=${whatsappMsg}`}

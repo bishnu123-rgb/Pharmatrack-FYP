@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Shield, Search, LogIn, Heart, Phone, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import AIChatbot from "./AIChatbot";
 
 const StoreLayout = ({ children }) => {
     const navigate = useNavigate();
@@ -92,6 +93,7 @@ const StoreLayout = ({ children }) => {
 
             {/* Page Content */}
             <main>{children}</main>
+            <AIChatbot role="customer" />
 
             {/* Footer */}
             <footer className="bg-slate-900 text-slate-400 mt-20">

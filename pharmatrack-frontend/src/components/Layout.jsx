@@ -14,6 +14,7 @@ import {
     Shield,
     Truck
 } from "lucide-react";
+import AIChatbot from "./AIChatbot";
 
 const Layout = ({ children }) => {
     const navigate = useNavigate();
@@ -122,6 +123,7 @@ const Layout = ({ children }) => {
                         {children}
                     </div>
                 </div>
+                <AIChatbot role="admin" />
             </main>
         </div>
     );

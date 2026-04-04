@@ -1,0 +1,240 @@
+[
+    {
+        "intent": "greeting",
+        "patterns": [
+            "hi",
+            "hello",
+            "hey",
+            "good morning",
+            "is anyone there",
+            "help",
+            "anybody"
+        ],
+        "responses": [
+            "Hello! I am your PharmaTrack Specialist. I'm here to provide professional guidance on your health and medications. How are you feeling today?",
+            "Greetings! I'm here to help. Are you experiencing any specific symptoms or looking for a particular medication?",
+            "Hi there! I'm your PharmaTrack Pro Assistant. Tell me, how can I help you with your wellness today?"
+        ],
+        "category": "General"
+    },
+    {
+        "intent": "filler",
+        "patterns": [
+            "man",
+            "dude",
+            "okay",
+            "ok",
+            "alright",
+            "i see",
+            "well",
+            "ah",
+            "i have a question",
+            "twerk"
+        ],
+        "responses": [
+            "I'm listening. Please go ahead and tell me what's on your mind or how you're feeling.",
+            "I'm here for you. What can I help you with today? Is it about a symptom or a product?",
+            "I understand. Feel free to describe your situation or ask anything about our medications.",
+            "I'm ready to help. What's the question? "
+        ],
+        "category": "General"
+    },
+    {
+        "intent": "leg_pain",
+        "patterns": [
+            "my leg is hurting",
+            "leg pain",
+            "pain in legs",
+            "cramp in leg",
+            "hurts to walk"
+        ],
+        "responses": [
+            "Leg pain can range from simple muscle strain to circulation issues. For muscle pain, we have Analgesics like Ibuprofen or Naproxen. I also recommend resting and keeping your leg elevated. If the pain is sudden and sharp, please visit a clinic.",
+            "For aching legs, a combination of rest and local analgesics (like Diclofenac gel) or systemic pain relievers like Paracetamol can help. Would you like to see our Analgesics section?"
+        ],
+        "category": "Analgesics"
+    },
+    {
+        "intent": "happiness",
+        "patterns": [
+            "i am happy",
+            "feeling good",
+            "i'm happy",
+            "i feel great",
+            "good news",
+            "happy"
+        ],
+        "responses": [
+            "That's wonderful to hear! Maintaining good mental well-being is just as important as physical health. Is there anything I can help you with to keep that positive energy going?",
+            "I'm so glad you're feeling great! It's always a pleasure to assist a happy customer. Do you need any vitamins or wellness products to maintain your health?"
+        ],
+        "category": "General"
+    },
+    {
+        "intent": "diarrhea",
+        "patterns": [
+            "diarrhea",
+            "loose motion",
+            "stomach upset",
+            "watery stool",
+            "diarrhea+sour taste"
+        ],
+        "responses": [
+            "Managing gastrointestinal distress requires both medication and hydration. I recommend checking our shelf for Loperamide or Zinc supplements. Keep your diet light and focus on electrolytes.",
+            "For diarrhea and stomach upset, hydration is key. You might also consider probiotics or Loperamide. Would you like to see our available Gastrointestinal medications?"
+        ],
+        "category": "Gastrointestinal"
+    },
+    {
+        "intent": "cholera",
+        "patterns": [
+            "cholera",
+            "severe watery diarrhea",
+            "cholera symptoms",
+            "vibrio cholerae"
+        ],
+        "responses": [
+            "Cholera is a severe diarrheal infection. Immediate rehydration with ORS is critical. We carry Ciprofloxacin and Azithromycin which are often prescribed for cholera, but these MUST be combined with professional medical care and a prescription.",
+            "If you suspect cholera, please seek hospital care immediately for IV fluids. For management as per pharmacy guidelines, we stock rehydration salts and specialized antibiotics like Cipronix. Would you like to see our Gatrointestinal/Antibiotic stock?"
+        ],
+        "category": "Gastrointestinal"
+    },
+    {
+        "intent": "dizziness",
+        "patterns": [
+            "dizzy",
+            "head spinning",
+            "vertigo",
+            "lightheaded",
+            "feeling faint",
+            "dizziness"
+        ],
+        "responses": [
+            "Dizziness (Vertigo) can be caused by dehydration, low blood pressure, or inner ear issues. I recommend sitting down immediately and hydrating. For medication, you might check for Meclizine or Betahistine on our shelves. If it persists, please consult a specialist.",
+            "Feeling lightheaded often requires rest and hydration. We have several options in our 'General' or 'Antivertigo' sections. Would you like me to show you the inventory for these?"
+        ],
+        "category": "General"
+    },
+    {
+        "intent": "nausea",
+        "patterns": [
+            "nausea",
+            "feeling like vomiting",
+            "vomiting",
+            "sour taste in mouth",
+            "bad taste"
+        ],
+        "responses": [
+            "Nausea and a sour taste can be symptoms of acidity or indigestion. I recommend trying an Antacid like Pantoprazole or Domperidone. Avoid spicy foods and stay hydrated.",
+            "For vomiting or nausea, we have effective anti-emetics and antacids in stock. Domperidone or Ondansetron are common options. You can find them in our Gastrointestinal section."
+        ],
+        "category": "Gastrointestinal"
+    },
+    {
+        "intent": "fever",
+        "patterns": [
+            "fever",
+            "high temperature",
+            "feeling hot",
+            "body ache and fever",
+            "chills"
+        ],
+        "responses": [
+            "For fever and body aches, Paracetamol (Acetaminophen) is the standard recommendation. Ensure you monitor your temperature and rest. You can find various strengths of Paracetamol in our Antipyretics section.",
+            "Managing a fever requires adequate rest and fluids. We have Paracetamol and Ibuprofen available. Check our Antipyretics shelf for details."
+        ],
+        "category": "Antipyretics"
+    },
+    {
+        "intent": "pain",
+        "patterns": [
+            "pain",
+            "headache",
+            "body ache",
+            "muscle pain",
+            "migraine",
+            "back pain"
+        ],
+        "responses": [
+            "For general pain relief, we carry a range of Analgesics like Paracetamol, Ibuprofen, and Naproxen. For migraines, you might look for specialized medications like Sumatriptan. Check our Analgesics section for more.",
+            "I recommend checking our Analgesics category for pain relief options. Don't forget to check the dosage instructions on the product page."
+        ],
+        "category": "Analgesics"
+    },
+    {
+        "intent": "cough",
+        "patterns": [
+            "cough",
+            "dry cough",
+            "wet cough",
+            "sore throat",
+            "throat pain"
+        ],
+        "responses": [
+            "For a persistent cough, we have several Antitussive syrups and lozenges. For dry cough, look for Dextromethorphan; for wet cough, Bromhexine is often recommended. Visit our Antitussive section for details.",
+            "Sore throats can be relieved with lozenges or salt-water gargles. We also stock effective cough syrups in our specialized category."
+        ],
+        "category": "Antitussive"
+    },
+    {
+        "intent": "acidity",
+        "patterns": [
+            "heartburn",
+            "acidity",
+            "gas",
+            "burning chest",
+            "stomach burn"
+        ],
+        "responses": [
+            "Heartburn and acidity are often treated with Antacids or PPIs like Omeprazole or Digene. You can find fast-acting gels and tablets in our Antacids section.",
+            "For stomach gas and acidity, I recommend our Gastrointestinal or Antacids shelf. Avoiding heavy meals before bed can also help."
+        ],
+        "category": "Antacids"
+    },
+    {
+        "intent": "allergy",
+        "patterns": [
+            "allergy",
+            "sneezing",
+            "itchy eyes",
+            "runny nose",
+            "skin rash"
+        ],
+        "responses": [
+            "For allergic reactions like sneezing or rashes, Antihistamines such as Cetirizine or Loratadine are highly effective. Check our Antihistamine category for specialized options.",
+            "Seasonal allergies can be managed with our range of Antihistamines. Cetirizine is a popular non-drowsy choice available in our store."
+        ],
+        "category": "Antihistamine"
+    },
+    {
+        "intent": "store_info",
+        "patterns": [
+            "hours",
+            "location",
+            "delivery",
+            "opening time",
+            "where are you",
+            "contact"
+        ],
+        "responses": [
+            "PharmaTrack is open 24/7 for your medical needs. We are located in the heart of Kathmandu and offer home delivery for orders over NPR 500.",
+            "We provide 24-hour service and specialized pharmacist consultations. Delivery is available within 30 minutes in most city areas. You can contact us at +977-1-4444444."
+        ],
+        "category": "Info"
+    },
+    {
+        "intent": "thanks",
+        "patterns": [
+            "thank you",
+            "thanks",
+            "thx",
+            "awesome",
+            "great help"
+        ],
+        "responses": [
+            "You're very welcome! I'm happy to help. Is there anything else you need to know?",
+            "Glad I could help. Stay healthy and feel free to ask if you have more questions!"
+        ],
+        "category": "General"
+    }
+]

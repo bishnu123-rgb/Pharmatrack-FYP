@@ -1,0 +1,77 @@
+[
+    {
+        "intent": "admin_inventory",
+        "patterns": [
+            "how many medicines are low in stock",
+            "check inventory",
+            "show me out of stock items",
+            "add a new medicine",
+            "update medicine price"
+        ],
+        "responses": [
+            "I've analyzed the inventory. You can view all 'Low Stock' items directly in the 'Medicines' menu. To add a new product, click the 'Add Medicine' button in the top right of the catalogue.",
+            "The inventory status is currently updated. For a detailed view of out-of-stock items, I recommend checking the 'Resource Alerts' section. Would you like me to take you there?"
+        ],
+        "category": "Inventory"
+    },
+    {
+        "intent": "admin_sales",
+        "patterns": [
+            "show me today's sales",
+            "last week's income",
+            "total revenue",
+            "daily sales report",
+            "top selling medicine"
+        ],
+        "responses": [
+            "The sales analytics are ready. You can view the full revenue breakdown in the 'Sales' section. Today's top-selling category appears to be Analgesics.",
+            "Your financial dashboard provides real-time tracking of income and sales volume. For a PDF report, please navigate to 'Sales' and click the Export button."
+        ],
+        "category": "Sales"
+    },
+    {
+        "intent": "admin_users",
+        "patterns": [
+            "how to add a new staff",
+            "register a new user",
+            "change user role",
+            "delete a user",
+            "staff management"
+        ],
+        "responses": [
+            "Staff management is restricted to Admin roles. You can manage permissions and add new accounts in the 'User Registry' menu.",
+            "To update a staff member's role or status, please visit the 'User Registry'. Only authorized administrators can perform these actions."
+        ],
+        "category": "Users"
+    },
+    {
+        "intent": "admin_alerts",
+        "patterns": [
+            "any new alerts",
+            "expiry warnings",
+            "is there any low stock",
+            "notifications"
+        ],
+        "responses": [
+            "Yes, I've flagged a few items nearing expiry. Please visit the 'Resource Alerts' section for the full list of priority notifications.",
+            "Check the 'Resource Alerts' tab. I've highlighted several batches that require immediate attention due to low stock or upcoming expiration."
+        ],
+        "category": "Alerts"
+    },
+    {
+        "intent": "admin_greeting",
+        "patterns": [
+            "hello",
+            "hi",
+            "hey",
+            "good morning",
+            "is anyone there",
+            "admin help"
+        ],
+        "responses": [
+            "Hello! I am your PharmaTrack Operational Assistant. I'm here to help you manage the pharmacy, track sales, and monitor stock levels. What can I do for you today?",
+            "Greetings! I'm ready to assist with your administrative tasks. Whether you need an inventory summary or a sales report, I'm here to streamline your workflow."
+        ],
+        "category": "General"
+    }
+]
