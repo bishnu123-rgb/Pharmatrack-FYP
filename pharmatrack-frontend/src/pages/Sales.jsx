@@ -349,7 +349,7 @@ const Sales = () => {
                             <p className="text-sm font-black text-indigo-600 leading-none">{filteredBatches.length}</p>
                         </div>
                         <div className="px-4 py-2 bg-emerald-50 rounded-xl">
-                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Bill Queue</p>
+                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Items in Cart</p>
                             <p className="text-sm font-black text-emerald-600 leading-none">{cart.length}</p>
                         </div>
                     </div>
@@ -647,7 +647,7 @@ const Sales = () => {
                                     <Plus size={24} />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Top Product</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Top Product (All Time)</p>
                                     <p className="text-sm font-black text-slate-900 leading-tight line-clamp-1">{salesStats.top_medicine || 'None'}</p>
                                 </div>
                             </div>
