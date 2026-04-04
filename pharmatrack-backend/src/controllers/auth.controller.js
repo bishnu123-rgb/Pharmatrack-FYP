@@ -197,8 +197,10 @@ exports.resendVerificationCode = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log("LOGIN ATTEMPT STARTED", { username });
 
     if (!username || !password) {
+      console.log("LOGIN REJECTED: Missing credentials");
       return res.status(400).json({ message: "Username and password required" });
     }
 
@@ -213,18 +215,26 @@ exports.login = async (req, res) => {
 
     const result = await pool.query(query, [username]);
 
+    console.log("LOGIN DB QUERY RETURNED ROWS:", result.rows.length);
+
     if (result.rows.length === 0) {
+      console.log("LOGIN REJECTED: User not found in DB with that username/email");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const user = result.rows[0];
+    console.log("LOGIN USER FOUND: ", { user_id: user.user_id, status: user.status, role: user.role_name });
 
     if (user.status !== 'active') {
+      console.log("LOGIN REJECTED: Account inactive");
       return res.status(403).json({ message: "Account is inactive. Please contact admin." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    console.log("LOGIN PASSWORD MATCH: ", isMatch);
+
     if (!isMatch) {
+      console.log("LOGIN REJECTED: Passwords did not match");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 

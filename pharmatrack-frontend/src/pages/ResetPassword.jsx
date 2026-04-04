@@ -1,7 +1,24 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { resetPassword } from "../services/api";
-import { Lock, Loader2, ArrowLeft, HeartPulse, CheckCircle, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Lock, Loader2, ArrowLeft, HeartPulse, CheckCircle, Eye, EyeOff, ShieldCheck, Check, X } from "lucide-react";
+
+/* ── Password Strength ───────────────────────────────────── */
+const getStrength = (pw) => {
+    let s = 0;
+    if (pw.length >= 8) s++;
+    if (/[A-Z]/.test(pw)) s++;
+    if (/[0-9]/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    return s;
+};
+const strengthMeta = [
+    { label: "Too Short", bar: "bg-rose-400", text: "text-rose-500" },
+    { label: "Weak", bar: "bg-orange-400", text: "text-orange-500" },
+    { label: "Fair", bar: "bg-yellow-400", text: "text-yellow-600" },
+    { label: "Good", bar: "bg-emerald-400", text: "text-emerald-600" },
+    { label: "Strong", bar: "bg-emerald-500", text: "text-emerald-700" },
+];
 
 const ResetPassword = () => {
     const { token } = useParams();
@@ -9,9 +26,14 @@ const ResetPassword = () => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+
+    const strengthen = getStrength(password);
+    const passwordsMatch = confirmPassword.length > 0 && password.length > 0 && password === confirmPassword;
+    const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -105,17 +127,36 @@ const ResetPassword = () => {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-16 pr-14 py-4 sm:py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all duration-300 shadow-sm"
+                                        className="w-full pl-16 pr-14 py-4 sm:py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all duration-300 shadow-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                                         placeholder="New Password"
+                                        autoComplete="new-password"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
+                                        tabIndex={-1}
                                         className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
                                     >
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
                                 </div>
+                                {/* Strength bar */}
+                                {password.length > 0 && (
+                                    <div className="flex items-center gap-3 pt-1 pl-1">
+                                        <div className="flex gap-1 flex-1">
+                                            {[0, 1, 2, 3].map(i => (
+                                                <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300
+                                                    ${i < strengthen
+                                                        ? (strengthMeta[Math.max(strengthen - 1, 0)]?.bar || "bg-slate-200")
+                                                        : "bg-slate-100"
+                                                    }`} />
+                                            ))}
+                                        </div>
+                                        <span className={`text-[9px] font-black uppercase tracking-widest ${strengthMeta[Math.max(strengthen - 1, 0)]?.text || "text-slate-400"}`}>
+                                            {strengthen === 0 ? "Too Short" : strengthMeta[strengthen - 1].label}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Confirm Password */}
@@ -126,14 +167,25 @@ const ResetPassword = () => {
                                         <Lock size={20} />
                                     </div>
                                     <input
-                                        type="password"
+                                        type={showConfirm ? "text" : "password"}
                                         required
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full pl-16 pr-6 py-4 sm:py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all duration-300 shadow-sm"
+                                        className={`w-full pl-16 pr-14 py-4 sm:py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all duration-300 shadow-sm ${passwordsMatch ? "border-emerald-300 focus:border-emerald-400" : passwordsMismatch ? "border-rose-300 focus:border-rose-400" : ""} [&::-ms-reveal]:hidden [&::-ms-clear]:hidden`}
                                         placeholder="Confirm Password"
+                                        autoComplete="new-password"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirm(!showConfirm)}
+                                        tabIndex={-1}
+                                        className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
+                                    >
+                                        {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
                                 </div>
+                                {passwordsMatch && <p className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 pl-1 pt-0.5"><Check size={11} strokeWidth={3} /> Passwords match</p>}
+                                {passwordsMismatch && <p className="flex items-center gap-1.5 text-[10px] font-black text-rose-500 pl-1 pt-0.5"><X size={11} strokeWidth={3} /> Passwords do not match</p>}
                             </div>
 
                             {error && (
