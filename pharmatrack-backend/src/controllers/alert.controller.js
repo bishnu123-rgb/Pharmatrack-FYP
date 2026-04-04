@@ -46,7 +46,10 @@ exports.generateAlerts = async (req, res) => {
       SELECT
         batch_id,
         'EXPIRY',
-        'This batch will expire soon (' || TO_CHAR(expiry_date, 'Mon DD, YYYY') || ')'
+        CASE
+          WHEN expiry_date < CURRENT_DATE THEN 'CRITICAL: This batch has EXPIRED (' || TO_CHAR(expiry_date, 'Mon DD, YYYY') || ')'
+          ELSE 'This batch will expire soon (' || TO_CHAR(expiry_date, 'Mon DD, YYYY') || ')'
+        END
       FROM batches
       WHERE expiry_date <= CURRENT_DATE + INTERVAL '30 days'
       ON CONFLICT (batch_id, alert_type) DO UPDATE
@@ -71,7 +74,7 @@ exports.generateAlerts = async (req, res) => {
 exports.getAlerts = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT a.*, b.batch_number, m.medicine_name
+      SELECT a.*, b.batch_number, m.medicine_name, b.expiry_date
       FROM alerts a
       JOIN batches b ON a.batch_id = b.batch_id
       JOIN medicines m ON b.medicine_id = m.medicine_id
