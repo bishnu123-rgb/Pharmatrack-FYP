@@ -311,9 +311,9 @@ const Batches = () => {
                     <div className="w-[260px] relative z-[60]">
                         <SearchableSelect
                             theme="dark"
-                            options={[{ value: "all", label: "All Product Stocks" }, ...medicines.map(m => ({ value: m.medicine_id, label: m.name }))]}
+                            options={[{ value: "all", label: "All Product Stocks" }, ...medicines.map(m => ({ value: String(m.medicine_id), label: m.name }))]}
                             value={filterMedicine}
-                            onChange={(val) => setFilterMedicine(val)}
+                            onChange={(val) => setFilterMedicine(String(val))}
                             placeholder="Filter by Medicine"
                         />
                     </div>
@@ -550,7 +550,7 @@ const Batches = () => {
                 </div>
             </div>
 
-            {/* Fact Sheet */}
+            {/* Compact Fact Sheet Sheet */}
             {
                 viewingBatch && (
                     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-start pt-16 justify-center p-4" onClick={() => setViewingBatch(null)}>
@@ -632,7 +632,7 @@ const Batches = () => {
                 )
             }
 
-            {/* Edit Form Modal */}
+            {/* Compact Edit Form Modal without Scrolling */}
             {
                 modalOpen && (
                     <div className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-xl flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
@@ -738,7 +738,7 @@ const Batches = () => {
                     </div>
                 )
             }
-            {/* Barcode Scanner Modal */}
+            {/* Elite Barcode Scanner Modal */}
             {scannerOpen && (
                 <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
                     <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm flex flex-col items-center relative overflow-hidden shadow-2xl border border-slate-100/20">
