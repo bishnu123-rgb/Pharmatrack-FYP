@@ -51,7 +51,7 @@ exports.getBatches = async (req, res) => {
       JOIN medicines m ON b.medicine_id = m.medicine_id
       LEFT JOIN categories c ON m.category_id = c.category_id
       LEFT JOIN inventory i ON b.batch_id = i.batch_id
-      ORDER BY b.expiry_date ASC
+      ORDER BY b.batch_id DESC
     `);
     res.json(result.rows);
   } catch (err) {

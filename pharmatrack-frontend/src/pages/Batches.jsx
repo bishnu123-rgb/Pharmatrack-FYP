@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, X, Calendar, DollarSign, Fingerprint, Loader2, AlertCircle, AlertTriangle, Search, Package, Eye, Barcode, ShieldCheck, FileDown, CheckCircle2, History, Zap, LayoutGrid, List, ChevronDown, ScanLine } from "lucide-react";
 import { getBatches, createBatch, updateBatch, deleteBatch, getMedicines, IMAGE_BASE_URL } from "../services/api";
 
-// Searchable Select Component for Medicine Lookups
+// Elite Searchable Select Component for Medicine Lookups
 const SearchableSelect = ({ options, value, onChange, placeholder, disabled, theme = "light" }) => {
     const [search, setSearch] = useState("");
     const [open, setOpen] = useState(false);
@@ -166,11 +166,12 @@ const Batches = () => {
         if (!deleteConfirmId) return;
         try {
             await deleteBatch(deleteConfirmId);
-            notify("Batch archived and moved to history!");
+            notify("Batch archived and moved to history!", "success");
             setDeleteConfirmId(null);
             fetchData();
         } catch (err) {
-            alert("Failed to remove batch.");
+            notify("Error: This batch cannot be deleted because it is linked to sales or purchases.", "error");
+            setDeleteConfirmId(null);
         }
     };
 
