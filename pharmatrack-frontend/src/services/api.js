@@ -248,6 +248,7 @@ export const createPurchase = (data) => apiCall("/purchases", {
   body: JSON.stringify(data),
 });
 export const getPurchases = () => apiCall("/purchases");
+export const getPurchaseById = (id) => apiCall(`/purchases/${id}`);
 
 // --- ALERTS ---
 export const getAlerts = () => apiCall("/alerts");
@@ -295,4 +296,25 @@ export const notifyStock = (data) =>
     body: JSON.stringify(data),
   }).then(r => r.json());
 
+export const sendMessageToAI = (message, role = "customer") =>
+  fetch(`http://localhost:5000/api/ai/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, role }),
+  }).then(r => r.json());
+
+// Dedicated drug interaction check — uses its own backend endpoint with strict Gemini prompt
+export const checkDrugInteraction = (drug1, drug2) =>
+  fetch(`http://localhost:5000/api/ai/interaction-check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ drug1, drug2 }),
+  }).then(r => r.json());
+
+export const getInventoryInsights = (stats) =>
+  fetch(`http://localhost:5000/api/ai/inventory-insights`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stats }),
+  }).then(r => r.json());
 

@@ -1,128 +1,171 @@
 const pool = require("../config/db");
 const { logActivity } = require("../utils/logger");
 
-exports.createPurchase = async (req, res) => {
+exports.createSale = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const { supplier_id, invoice_no, items } = req.body;
+    const { items, customer_name, customer_phone } = req.body;
     const userId = req.user.user_id;
 
-    if (!supplier_id || !items || items.length === 0) {
-      return res.status(400).json({ message: "Invalid purchase data" });
-    }
-
-    const supplierCheck = await client.query(
-      "SELECT is_active FROM suppliers WHERE supplier_id = $1",
-      [supplier_id]
-    );
-
-    if (supplierCheck.rows.length === 0 || !supplierCheck.rows[0].is_active) {
-      return res.status(403).json({ message: "Supplier is inactive and cannot record purchases" });
+    if (!items || items.length === 0) {
+      return res.status(400).json({ message: "Invalid sale data" });
     }
 
     await client.query("BEGIN");
 
-    const purchaseResult = await client.query(
-      `INSERT INTO purchases (supplier_id, invoice_no, created_by)
+    const saleResult = await client.query(
+      `INSERT INTO sales (created_by, customer_name, customer_phone)
        VALUES ($1, $2, $3)
-       RETURNING purchase_id`,
-      [supplier_id, invoice_no, userId]
+       RETURNING sale_id`,
+      [userId, customer_name || 'Walking Customer', customer_phone || null]
     );
 
-    const purchaseId = purchaseResult.rows[0].purchase_id;
+    const saleId = saleResult.rows[0].sale_id;
     let totalAmount = 0;
 
     for (const item of items) {
-      const { quantity, unit_cost } = item;
-      const subtotal = quantity * unit_cost;
+      const { batch_id, quantity, unit_price } = item;
+      const subtotal = quantity * unit_price;
       totalAmount += subtotal;
 
-      let batchId = item.batch_id;
+      const stock = await client.query(
+        `SELECT i.current_quantity, b.expiry_date, m.is_active
+         FROM inventory i
+         JOIN batches b ON i.batch_id = b.batch_id
+         JOIN medicines m ON b.medicine_id = m.medicine_id
+         WHERE i.batch_id = $1`,
+        [batch_id]
+      );
 
-      // NEW BATCH MODE: create batch + inventory row first
-      if (!batchId && item.medicine_id) {
-        const { medicine_id, batch_number, expiry_date, selling_price } = item;
+      if (stock.rows.length === 0) {
+        throw new Error(`Batch ${batch_id} not found in inventory`);
+      }
 
-        const newBatch = await client.query(
-          `INSERT INTO batches (medicine_id, batch_number, expiry_date, cost_price, selling_price)
-           VALUES ($1, $2, $3, $4, $5)
-           RETURNING batch_id`,
-          [medicine_id, batch_number, expiry_date, unit_cost, selling_price || (unit_cost * 1.3)]
-        );
+      if (stock.rows[0].is_active === false) {
+        throw new Error(`Medicine in batch ${batch_id} is inactive and cannot be sold`);
+      }
 
-        batchId = newBatch.rows[0].batch_id;
+      if (new Date(stock.rows[0].expiry_date) < new Date()) {
+        throw new Error(`Batch ${batch_id} has expired and cannot be sold`);
+      }
 
-        // Create inventory record for the new batch
-        await client.query(
-          `INSERT INTO inventory (batch_id, current_quantity, low_stock_threshold)
-           VALUES ($1, $2, 10)`,
-          [batchId, quantity]
-        );
-      } else {
-        // RESTOCK MODE: update existing inventory
-        await client.query(
-          `UPDATE inventory
-           SET current_quantity = current_quantity + $1
-           WHERE batch_id = $2`,
-          [quantity, batchId]
-        );
+      if (stock.rows[0].current_quantity < quantity) {
+        throw new Error(`Insufficient stock for batch ${batch_id}`);
       }
 
       await client.query(
-        `INSERT INTO purchase_items
-         (purchase_id, batch_id, quantity, unit_cost, subtotal)
+        `INSERT INTO sale_items
+         (sale_id, batch_id, quantity, unit_price, subtotal)
          VALUES ($1, $2, $3, $4, $5)`,
-        [purchaseId, batchId, quantity, unit_cost, subtotal]
+        [saleId, batch_id, quantity, unit_price, subtotal]
+      );
+
+      await client.query(
+        `UPDATE inventory
+         SET current_quantity = current_quantity - $1
+         WHERE batch_id = $2`,
+        [quantity, batch_id]
       );
     }
 
     await client.query(
-      `UPDATE purchases SET total_amount = $1 WHERE purchase_id = $2`,
-      [totalAmount, purchaseId]
+      `UPDATE sales SET total_amount = $1 WHERE sale_id = $2`,
+      [totalAmount, saleId]
     );
 
     await client.query("COMMIT");
 
-    await logActivity(userId, "PURCHASE", `Purchase ${purchaseId} created — ${items.length} item(s), NPR ${totalAmount}`);
+    await logActivity(userId, "SALE", `Sale ${saleId} created`);
 
     res.status(201).json({
-      message: "Purchase recorded successfully",
-      purchase_id: purchaseId,
+      message: "Sale completed",
+      sale_id: saleId,
       total_amount: totalAmount
     });
 
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("CREATE PURCHASE ERROR:", err);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 };
 
-exports.getPurchases = async (req, res) => {
+exports.getSales = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT
-        p.purchase_id,
-        p.invoice_no,
-        p.purchase_date,
-        p.total_amount,
-        s.supplier_name,
-        u.username as created_by,
-        COUNT(pi.purchase_item_id) as item_count
-      FROM purchases p
-      JOIN suppliers s ON p.supplier_id = s.supplier_id
-      LEFT JOIN users u ON p.created_by = u.user_id
-      LEFT JOIN purchase_items pi ON p.purchase_id = pi.purchase_id
-      GROUP BY p.purchase_id, s.supplier_name, u.username
-      ORDER BY p.purchase_date DESC
-      LIMIT 50
+      SELECT s.*, u.username as sold_by_name
+      FROM sales s
+      LEFT JOIN users u ON s.created_by = u.user_id
+      ORDER BY s.sale_date DESC
     `);
     res.json(result.rows);
   } catch (err) {
-    console.error("GET PURCHASES ERROR:", err);
+    console.error("GET SALES ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getSaleById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get sale header
+    const saleResult = await pool.query(`
+      SELECT s.*, u.username as sold_by_name
+      FROM sales s
+      LEFT JOIN users u ON s.created_by = u.user_id
+      WHERE s.sale_id = $1
+    `, [id]);
+
+    if (saleResult.rows.length === 0) {
+      return res.status(404).json({ message: "Sale not found" });
+    }
+
+    // Get sale items with medicine details
+    const itemsResult = await pool.query(`
+      SELECT si.*, b.batch_number, m.medicine_name, m.dosage_form, m.strength
+      FROM sale_items si
+      JOIN batches b ON si.batch_id = b.batch_id
+      JOIN medicines m ON b.medicine_id = m.medicine_id
+      WHERE si.sale_id = $1
+    `, [id]);
+
+    res.json({
+      ...saleResult.rows[0],
+      items: itemsResult.rows
+    });
+  } catch (err) {
+    console.error("GET SALE BY ID ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getSalesStats = async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const statsResult = await pool.query(`
+      SELECT 
+        COALESCE(SUM(total_amount), 0) as daily_revenue,
+        COUNT(*) as transaction_count,
+        COALESCE((
+          SELECT m.medicine_name 
+          FROM sale_items si
+          JOIN batches b ON si.batch_id = b.batch_id
+          JOIN medicines m ON b.medicine_id = m.medicine_id
+          GROUP BY m.medicine_name
+          ORDER BY SUM(si.quantity) DESC
+          LIMIT 1
+        ), 'None') as top_medicine
+      FROM sales 
+      WHERE sale_date::date = $1
+    `, [today]);
+
+    res.json(statsResult.rows[0]);
+  } catch (err) {
+    console.error("GET SALES STATS ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };

@@ -69,15 +69,18 @@ const Sales = () => {
 
         const headers = ["Sale ID", "Date", "Customer", "Phone", "Sold By", "Total Amount"];
         const rows = filteredSales.map(s => [
-            `SAL-${s.sale_id.toString().padStart(6, '0')}`,
-            new Date(s.sale_date).toLocaleDateString(),
-            s.customer_name || "Guest Customer",
-            s.customer_phone || "N/A",
-            s.sold_by_name || "N/A",
+            `#SAL-${s.sale_id.toString().padStart(6, '0')}`,
+            new Date(s.sale_date).toISOString().split('T')[0],
+            s.customer_name || "Walking Customer",
+            s.customer_phone ? `\t${s.customer_phone}` : "N/A",
+            s.sold_by_name || "POS User",
             s.total_amount
         ]);
 
-        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        // Wrap each field in quotes to handle commas correctly
+        const csvContent = [headers, ...rows]
+            .map(row => row.map(cell => `"${(cell || "").toString().replace(/"/g, '""')}"`).join(","))
+            .join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -247,8 +250,10 @@ const Sales = () => {
                         <div className="grid grid-cols-2 gap-4 text-xs">
                             <div>
                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Customer</p>
-                                <p className="font-black text-slate-800">{lastSaleData.customer_name || 'Guest Customer'}</p>
-                                <p className="font-bold text-slate-500">{lastSaleData.customer_phone || 'N/A'}</p>
+                                <p className="font-black text-slate-800">{lastSaleData.customer_name || 'Walking Customer'}</p>
+                                {lastSaleData.customer_phone && lastSaleData.customer_phone !== 'N/A' && lastSaleData.customer_phone !== 'n/a' && (
+                                    <p className="font-bold text-slate-500">{lastSaleData.customer_phone}</p>
+                                )}
                             </div>
                             <div className="text-right">
                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Invoice Info</p>
@@ -686,51 +691,60 @@ const Sales = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {(sales || []).filter(s =>
-                                            s.sale_id.toString().includes(historySearchTerm) ||
-                                            (s.customer_name || "").toLowerCase().includes(historySearchTerm.toLowerCase())
-                                        ).map((s) => (
-                                            <tr key={s.sale_id} className="group hover:bg-slate-50 transition-all duration-300">
-                                                <td className="px-8 py-5">
-                                                    <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100">
-                                                        #SAL-{s.sale_id.toString().padStart(6, '0')}
-                                                    </span>
-                                                </td>
-                                                <td className="px-8 py-5">
-                                                    <div className="flex items-center gap-2 text-slate-600">
-                                                        <span className="text-xs font-bold">{new Date(s.sale_date).toLocaleDateString()}</span>
-                                                        <span className="text-[10px] font-black text-slate-300 uppercase">{new Date(s.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-5">
-                                                    <div className="space-y-0.5">
-                                                        <p className="text-sm font-black text-slate-800">{highlightText(s.customer_name || "Guest Customer", historySearchTerm)}</p>
-                                                        <p className="text-[10px] font-bold text-slate-400">{s.customer_phone || "No phone recorded"}</p>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-5">
-                                                    <span className="text-sm font-black text-slate-900 whitespace-nowrap">NPR {s.total_amount}</span>
-                                                </td>
-                                                <td className="px-8 py-5 text-right">
-                                                    <button
-                                                        onClick={() => handleViewSaleDetails(s.sale_id)}
-                                                        className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
-                                                    >
-                                                        <Eye size={14} /> View Details
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {(!sales || sales.length === 0) && (
-                                            <tr>
-                                                <td colSpan="5" className="px-8 py-20 text-center text-slate-400">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <Receipt size={40} className="text-slate-200" />
-                                                        <p className="text-sm font-bold uppercase tracking-widest">No transaction history found</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
+                                        {(() => {
+                                            const filteredSalesHistory = (sales || []).filter(s =>
+                                                s.sale_id.toString().includes(historySearchTerm) ||
+                                                (s.customer_name || "").toLowerCase().includes(historySearchTerm.toLowerCase())
+                                            );
+
+                                            if (filteredSalesHistory.length === 0) {
+                                                return (
+                                                    <tr>
+                                                        <td colSpan="5" className="px-8 py-20 text-center text-slate-400">
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <Receipt size={40} className="text-slate-200" />
+                                                                <p className="text-sm font-bold uppercase tracking-widest">No transaction history found</p>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+
+                                            return filteredSalesHistory.map((s) => (
+                                                <tr key={s.sale_id} className="group hover:bg-slate-50 transition-all duration-300">
+                                                    <td className="px-8 py-5">
+                                                        <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100">
+                                                            #SAL-{s.sale_id.toString().padStart(6, '0')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <div className="flex items-center gap-2 text-slate-600">
+                                                            <span className="text-xs font-bold">{new Date(s.sale_date).toLocaleDateString()}</span>
+                                                            <span className="text-[10px] font-black text-slate-300 uppercase">{new Date(s.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-sm font-black text-slate-800">{highlightText(s.customer_name || "Walking Customer", historySearchTerm)}</p>
+                                                            {s.customer_phone && s.customer_phone !== 'N/A' && s.customer_phone !== 'n/a' && (
+                                                                <p className="text-[10px] font-bold text-slate-400">{s.customer_phone}</p>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <span className="text-sm font-black text-slate-900 whitespace-nowrap">NPR {s.total_amount}</span>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-right">
+                                                        <button
+                                                            onClick={() => handleViewSaleDetails(s.sale_id)}
+                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl shadow-sm border border-slate-200 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
+                                                        >
+                                                            <Eye size={14} /> View Details
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ));
+                                        })()}
                                     </tbody>
                                 </table>
                             </div>
@@ -761,7 +775,9 @@ const Sales = () => {
                                 <div className="space-y-0.5">
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Customer</p>
                                     <p className="text-sm font-black text-slate-800 leading-tight">{selectedSale.customer_name || 'Walking Customer'}</p>
-                                    <p className="text-[10px] font-bold text-slate-500 leading-tight">{selectedSale.customer_phone || 'Unlisted'}</p>
+                                    {selectedSale.customer_phone && selectedSale.customer_phone !== 'N/A' && selectedSale.customer_phone !== 'n/a' && (
+                                        <p className="text-[10px] font-bold text-slate-500 leading-tight">{selectedSale.customer_phone}</p>
+                                    )}
                                 </div>
                                 <div className="text-right space-y-0.5">
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction</p>
@@ -772,7 +788,7 @@ const Sales = () => {
 
 
                             <div className="space-y-3">
-                                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Detailed Itemization</h3>
+                                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Detailed Items</h3>
                                 <div className="space-y-2">
                                     {selectedSale.items.map((item, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 hover:border-indigo-100 transition-colors">

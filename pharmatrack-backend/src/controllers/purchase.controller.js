@@ -126,3 +126,43 @@ exports.getPurchases = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.getPurchaseById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        p.purchase_id, p.invoice_no, p.purchase_date, p.total_amount,
+        s.supplier_name, s.phone as supplier_phone,
+        u.username as created_by
+      FROM purchases p
+      JOIN suppliers s ON p.supplier_id = s.supplier_id
+      LEFT JOIN users u ON p.created_by = u.user_id
+      WHERE p.purchase_id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Purchase not found" });
+    }
+
+    const purchase = result.rows[0];
+
+    const itemsResult = await pool.query(`
+      SELECT 
+        pi.quantity, pi.unit_cost, pi.subtotal,
+        b.batch_number,
+        m.medicine_name, m.dosage_form, m.strength
+      FROM purchase_items pi
+      JOIN batches b ON pi.batch_id = b.batch_id
+      JOIN medicines m ON b.medicine_id = m.medicine_id
+      WHERE pi.purchase_id = $1
+    `, [id]);
+
+    purchase.items = itemsResult.rows;
+
+    res.json(purchase);
+  } catch (err) {
+    console.error("GET PURCHASE DETAILS ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};

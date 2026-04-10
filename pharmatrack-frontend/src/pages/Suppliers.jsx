@@ -241,7 +241,7 @@ const Suppliers = () => {
                             </div>
                             <div className="space-y-1 border-x border-slate-100">
                                 <p className="text-[8px] font-black text-slate-400 uppercase">Last Order</p>
-                                <p className="text-[10px] font-black text-slate-900">{sup.last_order_date ? new Date(sup.last_order_date).toLocaleDateString() : 'N/A'}</p>
+                                <p className="text-[10px] font-black text-slate-900">{sup.last_order_date ? new Date(sup.last_order_date).toLocaleDateString() : 'No Orders'}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-[8px] font-black text-slate-400 uppercase">ID No.</p>
@@ -252,11 +252,11 @@ const Suppliers = () => {
                         <div className="space-y-3 mb-8 text-slate-500">
                             <div className="flex items-center gap-3">
                                 <Phone size={14} className="text-slate-400" />
-                                <span className="text-xs font-bold">{sup.phone || "N/A"}</span>
+                                <span className="text-xs font-bold">{sup.phone || "Unlisted"}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Mail size={14} className="text-slate-400" />
-                                <span className="text-xs font-bold truncate">{sup.email || "N/A"}</span>
+                                <span className="text-xs font-bold truncate">{sup.email || "No Email"}</span>
                             </div>
                         </div>
 
@@ -278,7 +278,7 @@ const Suppliers = () => {
                             )}
                             {sup.is_active && (
                                 <button
-                                    onClick={() => navigate('/purchases')}
+                                    onClick={() => navigate('/purchases', { state: { prefilledSupplierId: sup.supplier_id } })}
                                     className="w-12 h-12 bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 rounded-2xl flex items-center justify-center transition-all"
                                 >
                                     <ShoppingCart size={16} />
