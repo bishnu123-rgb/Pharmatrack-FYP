@@ -11,12 +11,20 @@ import {
     History,
     Clock,
     User,
-    ArrowRight
+    ArrowRight,
+    DollarSign,
+    BrainCircuit,
+    Sparkles,
+    MessageSquare,
+    X
 } from "lucide-react";
-import { getDashboardSummary } from "../services/api";
+import { getDashboardSummary, getInventoryInsights } from "../services/api";
 
-const StatCard = ({ title, value, icon: Icon, color, subtext, trend }) => (
-    <div className="bg-white rounded-[2rem] p-8 premium-shadow border border-slate-100 group hover:scale-[1.02] transition-all duration-500 relative overflow-hidden">
+const StatCard = ({ title, value, icon: Icon, color, subtext, trend, onClick }) => (
+    <div 
+        onClick={onClick}
+        className={`bg-white rounded-[2rem] p-8 premium-shadow border border-slate-100 group transition-all duration-500 relative overflow-hidden ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:border-indigo-200' : ''}`}
+    >
         <div className={`absolute top-0 right-0 w-32 h-32 ${color} opacity-[0.03] rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:translate-x-4 transition-transform duration-700`}></div>
 
         <div className="flex items-start justify-between relative z-10">
@@ -48,6 +56,29 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [time, setTime] = useState(new Date());
+
+    // AI Insight State
+    const [aiInsight, setAiInsight] = useState("");
+    const [isInsightLoading, setIsInsightLoading] = useState(false);
+    const [showInsight, setShowInsight] = useState(false);
+
+    const handleGetInsight = async () => {
+        if (aiInsight) {
+            setShowInsight(!showInsight);
+            return;
+        }
+
+        setIsInsightLoading(true);
+        setShowInsight(true);
+        try {
+            const data = await getInventoryInsights(stats);
+            setAiInsight(data.tip || "Focus on restocking high-velocity items and verifying expiry dates for clinical safety.");
+        } catch (err) {
+            setAiInsight("Operational intelligence engine temporarily offline. Continue following standard pharmacy protocols.");
+        } finally {
+            setIsInsightLoading(false);
+        }
+    };
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -106,11 +137,15 @@ const Dashboard = () => {
         );
     }
 
-    const maxWeeklySale = Math.max(...(stats?.weekly_sales?.map(s => s.total) || [1]), 1);
+    const maxWeeklyValue = Math.max(
+        ...(stats?.weekly_sales || []).map(s => Number(s.total || 0)),
+        ...(stats?.weekly_sales || []).map(s => Number(s.profit || 0)),
+        1
+    );
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 space-y-10 pb-10">
-            {/* Personalized Header */}
+            {/* Elite Personalized Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div className="space-y-2">
                     <div className="flex items-center gap-3 text-indigo-600 font-black tracking-[0.2em] uppercase text-[10px] animate-pulse">
@@ -156,7 +191,7 @@ const Dashboard = () => {
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard
                     title="Available Medicines"
                     value={stats?.total_medicines || 0}
@@ -164,6 +199,7 @@ const Dashboard = () => {
                     color="bg-blue-500"
                     subtext="Unique items in store"
                     trend="+12% this month"
+                    onClick={() => navigate('/medicines')}
                 />
                 <StatCard
                     title="Low Stock"
@@ -172,6 +208,7 @@ const Dashboard = () => {
                     color="bg-amber-500"
                     subtext="Required attention"
                     trend={stats?.low_stock_items > 0 ? "Action Required" : "Optimal"}
+                    onClick={() => navigate('/alerts')}
                 />
                 <StatCard
                     title="Expired Medicines"
@@ -180,15 +217,38 @@ const Dashboard = () => {
                     color="bg-rose-500"
                     subtext="Items to remove"
                     trend="Immediate action"
+                    onClick={() => navigate('/alerts')}
                 />
                 <StatCard
                     title="Today's Sales"
-                    value={`NPR ${stats?.today_sales?.toLocaleString() || 0}`}
+                    value={`NPR ${(stats?.today_sales || 0).toLocaleString()}`}
                     icon={TrendingUp}
-                    color="bg-emerald-500"
+                    color="bg-indigo-500"
                     subtext="Daily revenue flow"
                     trend="+5.2% v/s yesterday"
+                    onClick={() => navigate('/sales')}
                 />
+                {stats?.today_profit !== null && (
+                    <StatCard
+                        title="Net Profit (Today)"
+                        value={`NPR ${(stats?.today_profit || 0).toLocaleString()}`}
+                        icon={DollarSign}
+                        color="bg-emerald-500"
+                        subtext="Actual earnings"
+                        trend="Manager's View"
+                        onClick={() => navigate('/sales')}
+                    />
+                )}
+                <StatCard
+                    title="Stock Requests"
+                    value={stats?.stock_requests || 0}
+                    icon={MessageSquare}
+                    color="bg-violet-500"
+                    subtext="Waiting for restock"
+                    trend={stats?.ready_leads > 0 ? `${stats.ready_leads} Ready to Notify` : "Store Leads"}
+                    onClick={() => navigate('/stock-requests')}
+                />
+
             </div>
 
             {/* Middle Section: Chart and Notices */}
@@ -204,23 +264,37 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 flex items-end justify-between gap-4 md:gap-8 pt-4">
+                    <div className="flex-1 flex items-end justify-between gap-4 md:gap-8 pt-4 border-b border-slate-100 pb-2">
                         {stats.weekly_sales && stats.weekly_sales.length > 0 ? (
                             stats.weekly_sales.map((sale, i) => (
                                 <div key={i} className="flex-1 flex flex-col items-center gap-4 group/bar h-full justify-end">
-                                    <div className="relative w-full flex flex-col items-center group-hover/bar:-translate-y-2 transition-transform duration-500">
-                                        <div className="absolute -top-10 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all pointer-events-none z-20 shadow-xl">
-                                            NPR {sale.total.toLocaleString()}
+                                    <div className="relative w-full flex flex-row items-end justify-center gap-1 group-hover/bar:-translate-y-2 transition-transform duration-500">
+                                        <div className="absolute -top-10 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all pointer-events-none z-20 shadow-xl whitespace-nowrap">
+                                            Rev: {(sale.total || 0).toLocaleString()}
+                                            {sale.profit !== null && ` | Profit: ${(sale.profit || 0).toLocaleString()}`}
                                         </div>
+                                        {/* Sales Bar */}
                                         <div
-                                            className="w-full max-w-[44px] bg-slate-50 group-hover/bar:bg-indigo-50 transition-all duration-500 rounded-2xl relative overflow-hidden"
-                                            style={{ height: `${(sale.total / maxWeeklySale) * 180 + 30}px` }}
+                                            className="w-4 bg-slate-50 group-hover/bar:bg-indigo-50 transition-all duration-500 rounded-t-lg relative overflow-hidden"
+                                            style={{ height: `${(sale.total / maxWeeklyValue) * 180 + 10}px` }}
                                         >
                                             <div
-                                                className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-2xl opacity-80 group-hover/bar:opacity-100 transition-all duration-700 shadow-inner"
-                                                style={{ height: sale.total > 0 ? `${(sale.total / maxWeeklySale) * 100}%` : '4px' }}
+                                                className="absolute inset-x-0 bottom-0 bg-indigo-500 opacity-60 group-hover/bar:opacity-100 transition-all duration-700"
+                                                style={{ height: sale.total > 0 ? '100%' : '2px' }}
                                             ></div>
                                         </div>
+                                        {/* Profit Bar - Admin Only */}
+                                        {sale.profit !== null && (
+                                            <div
+                                                className="w-4 bg-slate-50 group-hover/bar:bg-emerald-50 transition-all duration-500 rounded-t-lg relative overflow-hidden"
+                                                style={{ height: `${(sale.profit / maxWeeklyValue) * 180 + 10}px` }}
+                                            >
+                                                <div
+                                                    className="absolute inset-x-0 bottom-0 bg-emerald-500 opacity-60 group-hover/bar:opacity-100 transition-all duration-700"
+                                                    style={{ height: sale.profit > 0 ? '100%' : '2px' }}
+                                                ></div>
+                                            </div>
+                                        )}
                                     </div>
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{sale.day.substring(0, 3)}</span>
                                 </div>
@@ -315,7 +389,7 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-black text-slate-900 tracking-tight">NPR {activity.amount.toLocaleString()}</p>
+                                        <p className="text-sm font-black text-slate-900 tracking-tight">NPR {(activity.amount || 0).toLocaleString()}</p>
                                         <ArrowRight className="text-slate-300 ml-auto mt-1 opacity-0 group-hover:opacity-100 transition-opacity" size={14} />
                                     </div>
                                 </div>
@@ -369,6 +443,42 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* AI Strategy Node - Floating Action */}
+            <div className="fixed top-24 right-8 z-[100] flex flex-col items-end gap-4 animate-in slide-in-from-right-10 duration-700">
+                <button
+                    onClick={handleGetInsight}
+                    className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform hover:scale-110 active:scale-95 group ${showInsight ? 'bg-indigo-600' : 'bg-slate-900 hover:bg-indigo-600'}`}
+                >
+                    <div className="relative">
+                        <BrainCircuit size={28} className={`text-white transition-all duration-500 ${isInsightLoading ? 'animate-pulse' : 'group-hover:rotate-12'}`} />
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-slate-900 animate-ping"></div>
+                    </div>
+                </button>
+
+                {showInsight && (
+                    <div className="max-w-xs bg-slate-900 border border-slate-800 text-white p-6 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-top-5 fade-in duration-500 relative">
+                        <div className="flex items-center gap-2 mb-3 text-indigo-400">
+                            <Sparkles size={14} className="animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Smart Strategy Node</span>
+                            <button onClick={() => setShowInsight(false)} className="ml-auto text-slate-500 hover:text-white transition-colors">
+                                <X size={14} />
+                            </button>
+                        </div>
+                        {isInsightLoading ? (
+                            <div className="flex items-center gap-3 py-2">
+                                <Loader2 size={16} className="animate-spin text-indigo-500" />
+                                <span className="text-xs font-bold text-slate-400">Analyzing System State...</span>
+                            </div>
+                        ) : (
+                            <p className="text-sm font-bold leading-relaxed text-indigo-50 italic">
+                                "{aiInsight}"
+                            </p>
+                        )}
+                        <div className="absolute -top-2 right-8 w-4 h-4 bg-slate-900 rotate-45 border-t border-l border-slate-800"></div>
+                    </div>
+                )}
             </div>
         </div>
     );

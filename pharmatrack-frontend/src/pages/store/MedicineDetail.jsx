@@ -87,25 +87,9 @@ const MedicineDetail = () => {
     const [copied, setCopied] = useState(false);
     const [notifyForm, setNotifyForm] = useState({ name: "", phone: "" });
     const [submittingNotify, setSubmittingNotify] = useState(false);
-    const [rxFile, setRxFile] = useState(null);
-    const [verifyingRx, setVerifyingRx] = useState(false);
 
-    const handleRxVerify = (e) => {
-        e.preventDefault();
-        if (!rxFile) {
-            toast.error("Please select a prescription file (Image/PDF).");
-            return;
-        }
-        setVerifyingRx(true);
-        // Simulate a professional verification process
-        setTimeout(() => {
-            const msg = encodeURIComponent(`Hello! I've uploaded my prescription for ${medicine.name}. Please verify it so I can proceed with the purchase. Thank you.`);
-            window.open(`https://wa.me/9779800000000?text=${msg}`, "_blank");
-            toast.success("Prescription verification initiated via WhatsApp!");
-            setVerifyingRx(false);
-            setRxFile(null);
-        }, 1500);
-    };
+
+
 
     const handleNotifySubmit = async (e) => {
         e.preventDefault();
@@ -182,12 +166,7 @@ const MedicineDetail = () => {
     const imgSrc = medicine.image_url ? `${IMAGE_BASE_URL}${medicine.image_url}` : null;
     const whatsappMsg = encodeURIComponent(`Hello! I would like to enquire about:\n*${medicine.name}* (${[medicine.strength, medicine.dosage_form].filter(Boolean).join(", ")})\nIs it currently available? Thank you.`);
 
-    const copyLink = () => {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2500);
-        });
-    };
+
 
     const tabs = [
         { id: "overview", label: "Overview", icon: Info },
@@ -303,13 +282,6 @@ const MedicineDetail = () => {
                         </div>
                     )}
 
-                    {/* Copy Link */}
-                    <button
-                        onClick={copyLink}
-                        className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-sm transition border ${copied ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-100'}`}
-                    >
-                        {copied ? <><Check size={16} /> Link Copied!</> : <><Link2 size={16} /> Copy Link to Share</>}
-                    </button>
 
                     <button onClick={() => navigate("/store")}
                         className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 font-bold text-sm transition-colors">
@@ -337,38 +309,6 @@ const MedicineDetail = () => {
                         </div>
                     </div>
 
-                    {/* Prescription Verification Flow */}
-                    {medicine.requires_prescription && (
-                        <div className="p-7 bg-rose-50 border border-rose-100 rounded-[2.5rem] space-y-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-                            <div className="flex items-center gap-2 text-rose-600 font-black text-sm">
-                                <ShieldAlert size={20} /> Prescription Verification Required
-                            </div>
-                            <p className="text-[11px] font-bold text-slate-500 leading-relaxed max-w-sm">
-                                To ensure your safety, this medication requires a valid prescription. Upload your Rx below for our pharmacist to verify.
-                            </p>
-                            <div className="space-y-3 relative z-10">
-                                <div className="relative group/file">
-                                    <input
-                                        type="file"
-                                        onChange={(e) => setRxFile(e.target.files[0])}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        accept="image/*,application/pdf"
-                                    />
-                                    <div className={`p-4 rounded-xl border-2 border-dashed flex items-center justify-center gap-3 transition-all ${rxFile ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-white text-rose-400 group-hover/file:border-rose-300'}`}>
-                                        {rxFile ? <><FileCheck size={18} /> {rxFile.name}</> : <><Upload size={18} /> Select Prescription File</>}
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={handleRxVerify}
-                                    disabled={!rxFile || verifyingRx}
-                                    className="w-full py-4 rounded-xl bg-rose-600 text-white font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all disabled:opacity-50 shadow-lg shadow-rose-200"
-                                >
-                                    {verifyingRx ? "Verifying..." : "Securely Submit for Verification"}
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Tabs */}
                     <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">

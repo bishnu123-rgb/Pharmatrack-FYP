@@ -12,8 +12,10 @@ import Alerts from "./pages/Alerts";
 import Profile from "./pages/Profile";
 import UserManagement from "./pages/UserManagement";
 import Suppliers from "./pages/Suppliers";
+import StockRequests from "./pages/StockRequests";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+
 import StoreLanding from "./pages/store/StoreLanding";
 import MedicineDetail from "./pages/store/MedicineDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -136,6 +138,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Suppliers />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/stock-requests"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <StockRequests />
               </Layout>
             </ProtectedRoute>
           }

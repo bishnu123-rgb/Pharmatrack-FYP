@@ -290,7 +290,7 @@ const SmartHealthConsultant = ({ medicines, setActiveSection }) => {
                 </span>
                 <div className="flex items-center justify-center gap-4 mb-4">
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Smart Health Consultant</h2>
-                    {(selectedSymptoms.length > 0 || results.length > 0) && (
+                    {(selectedSymptoms.length > 0 || results.length > 0 || aiAdvice) && (
                         <button onClick={resetConsultation} className="p-2 bg-slate-100 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors">
                             <RefreshCw size={16} />
                         </button>
@@ -658,14 +658,6 @@ const StoreLanding = () => {
             {/* Premium Trust Banner */}
             <div className="max-w-7xl mx-auto px-6 pb-12 mt-12">
                 <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-100 rounded-[2.5rem] p-10 flex flex-wrap items-center justify-center gap-12 shadow-sm">
-                    <div className="flex items-center gap-3 group transition-transform hover:scale-105">
-                        <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center"><Shield className="text-emerald-600" size={20} /></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">WHO-GMP Certified</span>
-                    </div>
-                    <div className="flex items-center gap-3 group transition-transform hover:scale-105">
-                        <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center"><CheckCircle2 className="text-emerald-600" size={20} /></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Ministry of Health Regulated</span>
-                    </div>
                     <div className="flex items-center gap-3 group transition-transform hover:scale-105">
                         <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center"><Lock className="text-emerald-600" size={20} /></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Secure Consultation</span>

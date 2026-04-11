@@ -53,9 +53,10 @@ exports.getPublicMedicines = async (req, res) => {
                 m.image_url,
                 m.description,
                 m.requires_prescription,
-                c.category_name,
+                COALESCE(c.category_name, 'General') AS category_name,
                 c.category_id,
                 COALESCE(SUM(i.current_quantity), 0) AS total_stock,
+
                 COALESCE(MAX(i.low_stock_threshold), 10) AS low_stock_threshold
             FROM medicines m
             LEFT JOIN categories c ON m.category_id = c.category_id
@@ -102,9 +103,10 @@ exports.getMedicineDetail = async (req, res) => {
                 m.indications,
                 m.side_effects,
                 m.requires_prescription,
-                c.category_name,
+                COALESCE(c.category_name, 'General') AS category_name,
                 c.category_id,
                 COALESCE(SUM(i.current_quantity), 0) AS total_stock,
+
                 COALESCE(MAX(i.low_stock_threshold), 10) AS low_stock_threshold,
                 MIN(b.expiry_date) AS earliest_expiry
             FROM medicines m
@@ -153,6 +155,49 @@ exports.getMedicineDetail = async (req, res) => {
     }
 };
 
+// Admin: Get all unfulfilled stock requests with medicine names and current availability
+exports.getAllStockRequests = async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                sr.*, 
+                m.medicine_name, 
+                m.dosage_form, 
+                m.strength,
+                COALESCE(inv.total_qty, 0) as current_stock
+            FROM stock_requests sr
+            JOIN medicines m ON sr.medicine_id = m.medicine_id
+            LEFT JOIN (
+                SELECT b.medicine_id, SUM(i.current_quantity) as total_qty
+                FROM batches b
+                JOIN inventory i ON b.batch_id = i.batch_id
+                WHERE b.expiry_date >= CURRENT_DATE
+                GROUP BY b.medicine_id
+            ) inv ON sr.medicine_id = inv.medicine_id
+            WHERE sr.fulfilled = FALSE
+            ORDER BY sr.requested_at DESC
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+
+// Admin: Mark a request as fulfilled
+exports.fulfillStockRequest = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query(
+            "UPDATE stock_requests SET fulfilled = TRUE WHERE id = $1",
+            [id]
+        );
+        res.json({ message: "Stock request marked as fulfilled." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // Public: Get all categories (for filter bar)
 exports.getPublicCategories = async (req, res) => {
     try {
@@ -168,3 +213,5 @@ exports.getPublicCategories = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+

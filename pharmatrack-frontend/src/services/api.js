@@ -296,6 +296,13 @@ export const notifyStock = (data) =>
     body: JSON.stringify(data),
   }).then(r => r.json());
 
+export const getStockRequests = () => apiCall("/store/manage/requests");
+
+export const fulfillStockRequest = (id) => apiCall(`/store/manage/requests/${id}/fulfill`, {
+  method: "PUT",
+});
+
+
 export const sendMessageToAI = (message, role = "customer") =>
   fetch(`http://localhost:5000/api/ai/chat`, {
     method: "POST",
