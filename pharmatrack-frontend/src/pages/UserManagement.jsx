@@ -36,6 +36,8 @@ const UserManagement = () => {
     const [notifications, setNotifications] = useState([]);
     const menuRef = useRef(null);
 
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
     const notify = (message, type = "success") => {
         const id = Date.now();
         setNotifications(prev => [...prev, { id, message, type }]);
@@ -179,11 +181,13 @@ const UserManagement = () => {
                                         <button
                                             key={role.id}
                                             onClick={() => handleRoleChange(activeUser.user_id, role.id)}
+                                            disabled={activeUser.user_id === currentUser.id}
                                             className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all
                                             ${activeUser.role_name === role.name
                                                     ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
                                                     : 'bg-slate-50 border border-slate-100 text-slate-600 hover:bg-white hover:text-indigo-600 hover:shadow-sm hover:border-indigo-100'
                                                 }
+                                            ${activeUser.user_id === currentUser.id ? 'opacity-40 cursor-not-allowed' : ''}
                                         `}
                                         >
                                             <div className="flex items-center gap-2.5">
@@ -199,10 +203,11 @@ const UserManagement = () => {
                                 <p className="text-[10px] font-black text-rose-500/70 uppercase tracking-widest mb-3 flex items-center gap-1.5"><AlertCircle size={12} /> Danger Zone</p>
                                 <button
                                     onClick={() => { setActiveMenu(null); setDeleteConfirm(activeUser); }}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100"
+                                    disabled={activeUser.user_id === currentUser.id}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100 disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     <Trash2 size={15} />
-                                    Permanently Delete
+                                    {activeUser.user_id === currentUser.id ? "Cannot Delete Self" : "Permanently Delete"}
                                 </button>
                             </div>
                         </div>
@@ -349,7 +354,7 @@ const UserManagement = () => {
                                                     {u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}
                                                 </p>
                                                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                                                    {u.last_login ? new Date(u.last_login).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                                    {u.last_login ? new Date(u.last_login).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}
                                                 </p>
                                             </div>
                                         </td>
@@ -357,16 +362,19 @@ const UserManagement = () => {
                                             <div className="flex items-center justify-end gap-2 sm:gap-3 sm:translate-x-4 sm:opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500">
                                                 <button
                                                     onClick={() => toggleStatus(u.user_id, u.status)}
-                                                    disabled={toggling === u.user_id}
+                                                    disabled={toggling === u.user_id || u.user_id === currentUser.id}
                                                     className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition shadow-sm border
                                                     ${u.status === 'active'
                                                             ? 'bg-white text-rose-500 border-rose-100 hover:bg-rose-50'
                                                             : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-500'
                                                         }
+                                                    ${u.user_id === currentUser.id ? 'opacity-30 cursor-not-allowed' : ''}
                                                 `}
                                                 >
                                                     {toggling === u.user_id ? <Loader2 size={12} className="animate-spin" /> : (u.status === 'active' ? <Lock size={12} /> : <Unlock size={12} />)}
-                                                    <span className="hidden sm:inline">{u.status === 'active' ? 'Lock Account' : 'Unlock Account'}</span>
+                                                    <span className="hidden sm:inline">
+                                                        {u.user_id === currentUser.id ? 'Current User' : (u.status === 'active' ? 'Lock Account' : 'Unlock Account')}
+                                                    </span>
                                                     <span className="sm:hidden">{u.status === 'active' ? 'Lock' : 'Unlock'}</span>
                                                 </button>
 

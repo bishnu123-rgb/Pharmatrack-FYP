@@ -365,11 +365,32 @@ exports.resetPassword = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Hash new password
+    // 1. Check against historical passwords (last 10)
+    const historyResult = await pool.query(
+      "SELECT password_hash FROM password_history WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10",
+      [user.user_id]
+    );
+
+    for (const record of historyResult.rows) {
+      const isOldMatch = await bcrypt.compare(password, record.password_hash);
+      if (isOldMatch) {
+        return res.status(400).json({ message: "You have used this password recently. For security, please choose a different one." });
+      }
+    }
+
+    // 2. Hash new password
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Update password and clear token
+    // 3. Update password, save old one to history, and clear token
+    const currentPassResult = await pool.query("SELECT password_hash FROM users WHERE user_id = $1", [user.user_id]);
+    const currentHash = currentPassResult.rows[0].password_hash;
+
+    await pool.query(
+      "INSERT INTO password_history (user_id, password_hash) VALUES ($1, $2)",
+      [user.user_id, currentHash]
+    );
+
     await pool.query(
       "UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE user_id = $2",
       [passwordHash, user.user_id]

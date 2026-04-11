@@ -15,20 +15,30 @@ import {
     Truck
 } from "lucide-react";
 import AIChatbot from "./AIChatbot";
+import { IMAGE_BASE_URL } from "../services/api";
 
 const Layout = ({ children }) => {
     const navigate = useNavigate();
     const [userStr, setUserStr] = useState(localStorage.getItem("user"));
+    const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
 
     useEffect(() => {
         const handleUserUpdate = () => {
             setUserStr(localStorage.getItem("user"));
+            setAvatarTimestamp(Date.now()); // Force re-render of avatar on update
         };
         window.addEventListener("userUpdated", handleUserUpdate);
         return () => window.removeEventListener("userUpdated", handleUserUpdate);
     }, []);
 
     const user = userStr ? JSON.parse(userStr) : { username: "User", role: "staff" };
+
+    const getFullImageUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith("http") && !url.includes(IMAGE_BASE_URL)) return url;
+        const path = url.startsWith("/") ? url : `/${url}`;
+        return `${IMAGE_BASE_URL}${path}?t=${avatarTimestamp}`;
+    };
 
     const handleLogout = () => {
         localStorage.clear();
@@ -111,8 +121,17 @@ const Layout = ({ children }) => {
                                 <p className="text-sm font-black text-slate-900 leading-tight">{user.full_name || user.username}</p>
                                 <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">{user.role}</p>
                             </div>
-                            <div className="h-10 w-10 bg-indigo-50 border-2 border-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-black shadow-sm group cursor-pointer hover:scale-105 transition-transform">
-                                {user.username?.[0]?.toUpperCase()}
+                            <div className="h-10 w-10 bg-indigo-50 border-2 border-indigo-100 rounded-xl overflow-hidden flex items-center justify-center text-indigo-600 font-black shadow-sm group cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/profile')}>
+                                {user.avatar_url ? (
+                                    <img
+                                        src={getFullImageUrl(user.avatar_url)}
+                                        alt="User"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.target.src = ""; e.target.className = "hidden"; }}
+                                    />
+                                ) : (
+                                    <span>{user.username?.[0]?.toUpperCase()}</span>
+                                )}
                             </div>
                         </div>
                     </div>

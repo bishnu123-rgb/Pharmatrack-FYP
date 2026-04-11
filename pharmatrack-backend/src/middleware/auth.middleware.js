@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const pool = require("../config/db");
 
-function auth(req, res, next) {
+async function auth(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -15,6 +16,14 @@ function auth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Security Audit: Check if account is still active in database
+    const userResult = await pool.query("SELECT status FROM users WHERE user_id = $1", [decoded.user_id]);
+
+    if (userResult.rows.length === 0 || userResult.rows[0].status !== 'active') {
+      return res.status(403).json({ message: "Account locked or deactivated. Please contact administrator." });
+    }
+
     req.user = decoded;
     return next();
   } catch (err) {

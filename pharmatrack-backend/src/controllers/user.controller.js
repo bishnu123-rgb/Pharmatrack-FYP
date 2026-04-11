@@ -164,7 +164,12 @@ exports.updateUserStatus = async (req, res) => {
         }
 
         params.push(id);
-        const query = `UPDATE users SET ${updates.join(", ")} WHERE user_id = $${index} RETURNING *`;
+        const query = `
+            UPDATE users 
+            SET ${updates.join(", ")} 
+            WHERE user_id = $${index} 
+            RETURNING user_id, username, full_name, email, status, role_id, last_login
+        `;
 
         const result = await pool.query(query, params);
         res.json({ message: "User updated successfully", user: result.rows[0] });

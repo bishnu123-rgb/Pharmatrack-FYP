@@ -37,7 +37,7 @@ exports.generateAlerts = async (req, res) => {
       FROM inventory i
       WHERE i.current_quantity <= i.low_stock_threshold
       ON CONFLICT (batch_id, alert_type) DO UPDATE 
-      SET message = EXCLUDED.message, created_at = CURRENT_TIMESTAMP
+      SET message = EXCLUDED.message;
     `);
 
     // 4. Insert/Update Expiry alerts
@@ -53,7 +53,7 @@ exports.generateAlerts = async (req, res) => {
       FROM batches
       WHERE expiry_date <= CURRENT_DATE + INTERVAL '30 days'
       ON CONFLICT (batch_id, alert_type) DO UPDATE
-      SET message = EXCLUDED.message, created_at = CURRENT_TIMESTAMP
+      SET message = EXCLUDED.message;
     `);
 
     await client.query("COMMIT");
@@ -74,7 +74,7 @@ exports.generateAlerts = async (req, res) => {
 exports.getAlerts = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT a.*, b.batch_number, m.medicine_name, b.expiry_date
+      SELECT a.*, b.batch_number, m.medicine_name, b.expiry_date, m.medicine_id
       FROM alerts a
       JOIN batches b ON a.batch_id = b.batch_id
       JOIN medicines m ON b.medicine_id = m.medicine_id

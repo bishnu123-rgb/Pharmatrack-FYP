@@ -140,7 +140,7 @@ const Profile = () => {
             });
             setShowPasswordModal(false);
             setPassData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-            notify("Credentials rotated successfully!", "success");
+            notify("Password updated successfully!", "success");
         } catch (err) {
             showDialog("Security Error", err.message || "Failed to change password. Ensure your current password is correct.", "error");
         } finally {
@@ -390,7 +390,7 @@ const Profile = () => {
                                             <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
                                                 <Phone size={18} />
                                             </div>
-                                            {profile.phone || <span className="text-slate-300 italic">Not set</span>}
+                                            {profile.phone || <span className="text-slate-300 italic">Unlisted</span>}
                                         </h4>
                                     </div>
                                     <div className="space-y-1">

@@ -230,14 +230,24 @@ const Alerts = () => {
 
                                             {alert.alert_type === 'EXPIRY' ? (
                                                 <button
-                                                    onClick={() => navigate('/batches')}
+                                                    onClick={() => navigate('/batches', {
+                                                        state: {
+                                                            prefilledMedicineId: alert.medicine_id,
+                                                            prefilledBatchNumber: alert.batch_number
+                                                        }
+                                                    })}
                                                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-black/10 active:scale-95 ml-auto"
                                                 >
                                                     Verify Lot <Eye size={14} />
                                                 </button>
                                             ) : (
                                                 <button
-                                                    onClick={() => navigate('/purchases')}
+                                                    onClick={() => navigate('/purchases', {
+                                                        state: {
+                                                            prefilledMedicineId: alert.medicine_id,
+                                                            prefilledMedicineName: alert.medicine_name
+                                                        }
+                                                    })}
                                                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95 ml-auto"
                                                 >
                                                     Restock Now <ShoppingCart size={14} />
