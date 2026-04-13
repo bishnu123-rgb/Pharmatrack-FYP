@@ -1,24 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../services/api";
+import toast from "react-hot-toast";
 import { Mail, Loader2, ArrowLeft, HeartPulse, ShieldCheck, MailCheck } from "lucide-react";
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
+    const [sent, setSent] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError("");
-        setMessage("");
         try {
-            const data = await forgotPassword(email);
-            setMessage(data.message);
+            await forgotPassword(email);
+            setSent(true);
         } catch (err) {
-            setError(err?.message || "Failed to request password reset.");
+            toast.error(err?.message || "Failed to request password reset.");
         } finally {
             setLoading(false);
         }
@@ -82,7 +80,7 @@ const ForgotPassword = () => {
                         </p>
                     </div>
 
-                    {!message ? (
+                    {!sent ? (
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-2">
                                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
@@ -101,22 +99,12 @@ const ForgotPassword = () => {
                                 </div>
                             </div>
 
-                            {error && (
-                                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-5 rounded-2xl text-sm font-bold text-center shadow-sm">
-                                    ⚠️ {error}
-                                </div>
-                            )}
-
                             <button
                                 type="submit"
                                 disabled={loading}
                                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-indigo-600/20 transition-all active:scale-[0.98] disabled:opacity-70 group"
                             >
-                                {loading ? (
-                                    <Loader2 className="animate-spin" size={22} />
-                                ) : (
-                                    <>Send Reset Link</>
-                                )}
+                                {loading ? <Loader2 className="animate-spin" size={22} /> : <>Send Reset Link</>}
                             </button>
                         </form>
                     ) : (
@@ -125,17 +113,26 @@ const ForgotPassword = () => {
                                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm text-emerald-500">
                                     <MailCheck size={32} />
                                 </div>
-                                <p className="font-bold text-lg leading-relaxed">{message}</p>
+                                <p className="font-bold text-lg leading-relaxed">
+                                    If an account exists with this email, you will receive a reset link shortly.
+                                </p>
                             </div>
                             <p className="text-center text-slate-400 font-bold text-sm">
-                                Didn't receive code? <button onClick={handleSubmit} className="text-indigo-600 hover:underline">Resend</button>
+                                Didn't receive it?{" "}
+                                <button
+                                    type="button"
+                                    onClick={() => setSent(false)}
+                                    className="text-indigo-600 hover:underline"
+                                >
+                                    Try again
+                                </button>
                             </p>
                         </div>
                     )}
                 </div>
 
                 <div className="hidden sm:block absolute bottom-8 lg:bottom-10 text-slate-400 font-bold text-[10px] uppercase tracking-widest text-center w-full left-0 opacity-40">
-                    PharmaTrack — Pharmacy Management Portal
+                    PharmaTrack - Pharmacy Management Portal
                 </div>
             </div>
         </div>

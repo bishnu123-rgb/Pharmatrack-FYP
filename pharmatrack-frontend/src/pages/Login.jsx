@@ -1,28 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../services/api";
+import toast from "react-hot-toast";
 import { Lock, User, Loader2, ArrowRight, HeartPulse, ShieldCheck, Activity, Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  // Restore saved username on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("rememberedUsername");
+    if (saved) { setUsername(saved); setRememberMe(true); }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
     try {
       const data = await loginUser(username, password);
+      if (rememberMe) {
+        localStorage.setItem("rememberedUsername", username);
+      } else {
+        localStorage.removeItem("rememberedUsername");
+      }
       localStorage.setItem("token", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
+      toast.success(`Welcome back, ${data.user.full_name}!`);
       navigate("/dashboard");
     } catch (err) {
-      setError(err?.message || "Login failed. Please try again.");
+      toast.error(err?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -153,7 +165,16 @@ const Login = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <div className="flex justify-end pr-2">
+              <div className="flex items-center justify-between pr-2 pl-1 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={e => setRememberMe(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 accent-indigo-600"
+                  />
+                  <span className="text-xs font-bold text-slate-400">Remember me</span>
+                </label>
                 <Link
                   to="/forgot-password"
                   className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors"
@@ -163,13 +184,6 @@ const Login = () => {
               </div>
             </div>
 
-
-            {/* Error */}
-            {error && (
-              <div className="bg-rose-50 border border-rose-100 text-rose-600 p-5 rounded-2xl text-sm font-bold text-center shadow-sm">
-                ⚠️ {error}
-              </div>
-            )}
 
             {/* Submit */}
             <button
@@ -201,7 +215,7 @@ const Login = () => {
 
         {/* Footer watermark */}
         <div className="hidden sm:block absolute bottom-8 lg:bottom-10 text-slate-400 font-bold text-[10px] uppercase tracking-widest text-center w-full left-0 opacity-40">
-          PharmaTrack — Pharmacy Management Portal
+          PharmaTrack - Pharmacy Management Portal
         </div>
       </div>
     </div>

@@ -161,8 +161,29 @@ function App() {
         {/* Default route */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* 404 placeholder */}
-        <Route path="*" element={<div className="p-8">Page Not Found</div>} />
+        {/* Unauthorized access */}
+        <Route path="/unauthorized" element={
+          <div className="min-h-screen bg-white flex items-center justify-center font-sans">
+            <div className="text-center space-y-4 max-w-md px-8">
+              <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto text-rose-500 text-3xl font-black border border-rose-100">✕</div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Access Denied</h1>
+              <p className="text-slate-500 font-bold">You do not have permission to access this page. Please contact your system administrator.</p>
+              <a href="/dashboard" className="inline-block mt-4 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-200">Back to Dashboard</a>
+            </div>
+          </div>
+        } />
+
+        {/* 404 */}
+        <Route path="*" element={
+          <div className="min-h-screen bg-white flex items-center justify-center font-sans">
+            <div className="text-center space-y-4 max-w-md px-8">
+              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-400 text-3xl font-black border border-slate-100">?</div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Page Not Found</h1>
+              <p className="text-slate-500 font-bold">The page you are looking for does not exist.</p>
+              <a href="/dashboard" className="inline-block mt-4 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-200">Back to Dashboard</a>
+            </div>
+          </div>
+        } />
       </Routes>
     </Router>
   );

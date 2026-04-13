@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerUser, resendCode } from "../services/api";
+import { registerUser, resendCode, verifyEmail } from "../services/api";
+import toast from "react-hot-toast";
 import {
     User, Mail, Lock, Loader2, ArrowLeft, CheckCircle,
     HeartPulse, ShieldCheck, Eye, EyeOff, Check, X,
-    Activity, Database, Scale, Shield, ArrowRight
+    Activity, Database, Scale, Shield, ArrowRight, Clock
 } from "lucide-react";
 
 
@@ -32,6 +33,7 @@ const ROLES = [
         label: "Pharmacist",
         icon: <Shield size={28} />,
         desc: "Manages inventory, suppliers, batches & clinical data.",
+        note: "Requires admin approval before login.",
         accent: "indigo",
     },
     {
@@ -39,6 +41,7 @@ const ROLES = [
         label: "Staff",
         icon: <Activity size={28} />,
         desc: "Handles sales, purchases & general repository use.",
+        note: null,
         accent: "emerald",
     },
 ];
@@ -102,7 +105,7 @@ const PolicyModal = ({ onClose }) => (
                         <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">2. Data Security</h3>
                     </div>
                     <p className="text-[11px] text-slate-500 font-medium leading-relaxed pl-9 text-justify">
-                        All passwords are <span className="font-bold text-slate-700">hashed using bcrypt</span> before storage — they are never stored in plain text.
+                        All passwords are <span className="font-bold text-slate-700">hashed using bcrypt</span> before storage - they are never stored in plain text.
                         System access is governed by <span className="font-bold text-slate-700">JWT-based authentication</span> with short-lived access tokens (15 minutes)
                         and rotating refresh tokens (7 days). Tokens are invalidated upon logout.
                     </p>
@@ -119,7 +122,7 @@ const PolicyModal = ({ onClose }) => (
                         <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">3. Use of Data</h3>
                     </div>
                     <p className="text-[11px] text-slate-500 font-medium leading-relaxed pl-9 text-justify">
-                        Collected data is used exclusively for <span className="font-bold text-slate-700">system operations</span> — including identity verification,
+                        Collected data is used exclusively for <span className="font-bold text-slate-700">system operations</span> - including identity verification,
                         access management, and activity logging. Your data is never sold, transferred, or disclosed to any third party under any circumstances.
                     </p>
                 </div>
@@ -184,7 +187,7 @@ const Register = () => {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [policyOpen, setPolicyOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+
     const [success, setSuccess] = useState(false);
     const [verificationStage, setVerificationStage] = useState(false);
     const [verificationCode, setVerificationCode] = useState("");
@@ -195,38 +198,34 @@ const Register = () => {
 
 
     const strengthen = getStrength(formData.password);
-    const passwordsMatch = formData.confirm_password.length > 0 && formData.password === formData.confirm_password;
+    const passwordsMatch = formData.confirm_password.length > 0 && formData.password.length > 0 && formData.password === formData.confirm_password;
     const passwordsMismatch = formData.confirm_password.length > 0 && formData.password !== formData.confirm_password;
     const update = (field, val) => setFormData(p => ({ ...p, [field]: val }));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Strict Gmail Validation
         if (!formData.email.toLowerCase().endsWith("@gmail.com")) {
-            setError("Access Restricted: Only legitimate @gmail.com addresses are permitted.");
+            toast.error("Access Restricted: Only @gmail.com addresses are permitted.");
             return;
         }
+        if (!formData.role_name) { toast.error("Please select your professional role."); return; }
+        if (formData.password !== formData.confirm_password) { toast.error("Passwords do not match."); return; }
+        if (!acceptedTerms) { toast.error("You must accept the Privacy Policy to proceed."); return; }
 
-        if (!formData.role_name) { setError("Please select your professional role."); return; }
-        if (formData.password !== formData.confirm_password) { setError("Passwords do not match."); return; }
-        if (!acceptedTerms) { setError("You must accept the terms to proceed."); return; }
-
-        setLoading(true); setError("");
+        setLoading(true);
         try {
             const { confirm_password, ...submitData } = formData;
-            // Initiate Registration (sends code)
             const response = await registerUser(submitData);
-
             if (response.requiresVerification) {
                 setVerificationStage(true);
-                setSuccess(false); // Hide success until verified
+                toast.success("Verification code sent to your Gmail!");
             } else {
                 setSuccess(true);
                 setTimeout(() => navigate("/login"), 2500);
             }
         } catch (err) {
-            setError(err.message);
+            toast.error(err.message);
         } finally {
             setLoading(false);
         }
@@ -235,24 +234,18 @@ const Register = () => {
     const handleVerify = async (e) => {
         e.preventDefault();
         setVerifying(true);
-        setError("");
         try {
-            // Note: In api.js we will need a verifyCode function
-            // For now assuming registerUser handles it if code is passed or similar
-            // But let's follow a clean pattern
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/verify-email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: formData.email, code: verificationCode })
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Verification failed");
-
+            const data = await verifyEmail(formData.email, verificationCode);
             setSuccess(true);
             setVerificationStage(false);
-            setTimeout(() => navigate("/login"), 2500);
+            if (data.requiresApproval) {
+                toast.success("Account created! Please wait for administrator approval before logging in.", { duration: 5000 });
+            } else {
+                toast.success("Account verified successfully! Redirecting to login...");
+            }
+            setTimeout(() => navigate("/login"), 3000);
         } catch (err) {
-            setError(err.message);
+            toast.error(err.message);
         } finally {
             setVerifying(false);
         }
@@ -261,12 +254,12 @@ const Register = () => {
     const handleResendCode = async () => {
         if (resendTimer > 0) return;
         setResending(true);
-        setError("");
         try {
             await resendCode(formData.email);
-            setResendTimer(60); // 60 seconds cooldown
+            setResendTimer(60);
+            toast.success("New code sent! Check your Gmail.");
         } catch (err) {
-            setError(err.message);
+            toast.error(err.message);
         } finally {
             setResending(false);
         }
@@ -306,7 +299,7 @@ const Register = () => {
                             <span className="text-indigo-600">lives</span> today.
                         </h1>
                         <p className="text-slate-600 text-xl font-medium max-w-md leading-relaxed">
-                            Join the PharmaTrack network — built for care, safety, and operational excellence.
+                            Join the PharmaTrack network - built for care, safety, and operational excellence.
                         </p>
                     </div>
                 </div>
@@ -408,13 +401,6 @@ const Register = () => {
                                 </div>
                             </div>
 
-                            {/* Error */}
-                            {error && (
-                                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-xl text-sm font-bold text-center animate-shake">
-                                    ⚠️ {error}
-                                </div>
-                            )}
-
                             <button type="submit" disabled={verifying}
                                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-5 rounded-[1.5rem] font-black text-lg shadow-xl shadow-emerald-500/20 transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-3 group">
                                 {verifying ? <Loader2 className="animate-spin" size={22} /> : (
@@ -427,7 +413,7 @@ const Register = () => {
 
                             <button
                                 type="button"
-                                onClick={() => setVerificationStage(false)}
+                                onClick={() => { setVerificationStage(false); setVerificationCode(""); }}
                                 className="w-full text-slate-400 font-black text-xs uppercase tracking-widest hover:text-indigo-600 transition-colors py-2"
                             >
                                 Change Email Address
@@ -521,11 +507,16 @@ const Register = () => {
                                                     ${selected ? isIndigo ? "text-indigo-700" : "text-emerald-700" : "text-slate-700"}`}>
                                                     {role.label}
                                                 </p>
-                                                {/* Description — fully visible, wraps naturally */}
                                                 <p className={`text-[10px] font-medium leading-relaxed
                                                     ${selected ? isIndigo ? "text-indigo-500" : "text-emerald-600" : "text-slate-400"}`}>
                                                     {role.desc}
                                                 </p>
+                                                {role.note && (
+                                                    <p className={`flex items-center gap-1 text-[9px] font-black mt-1.5 uppercase tracking-wide
+                                                        ${selected && isIndigo ? "text-indigo-400" : "text-slate-300"}`}>
+                                                        <Clock size={9} /> {role.note}
+                                                    </p>
+                                                )}
                                             </button>
                                         );
                                     })}
@@ -584,8 +575,8 @@ const Register = () => {
                                         {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
                                     </button>
                                 </div>
-                                {passwordsMatch && <p className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 pl-1 pt-0.5"><Check size={11} /> Passwords match</p>}
-                                {passwordsMismatch && <p className="flex items-center gap-1.5 text-[10px] font-black text-rose-500 pl-1 pt-0.5"><X size={11} /> Passwords do not match</p>}
+                                {passwordsMatch && <p className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 pl-1 pt-0.5"><Check size={11} strokeWidth={3} /> Passwords match</p>}
+                                {passwordsMismatch && <p className="flex items-center gap-1.5 text-[10px] font-black text-rose-500 pl-1 pt-0.5"><X size={11} strokeWidth={3} /> Passwords do not match</p>}
                             </div>
 
                             {/* Terms with clickable Policy link */}
@@ -607,11 +598,7 @@ const Register = () => {
                             </div>
 
                             {/* Error */}
-                            {error && (
-                                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-xl text-sm font-bold text-center shadow-sm">
-                                    ⚠️ {error}
-                                </div>
-                            )}
+                            {/* Errors are now handled via toast notifications */}
 
                             {/* Submit */}
                             <button type="submit" disabled={loading}
@@ -630,7 +617,7 @@ const Register = () => {
                 </div>
 
                 <div className="hidden sm:block absolute bottom-8 text-slate-400 font-bold text-[10px] uppercase tracking-widest text-center w-full left-0 opacity-40">
-                    PharmaTrack — Pharmacy Management Portal
+                    PharmaTrack - Pharmacy Management Portal
                 </div>
             </div>
 

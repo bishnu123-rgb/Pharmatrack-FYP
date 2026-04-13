@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { resetPassword } from "../services/api";
+import toast from "react-hot-toast";
 import { Lock, Loader2, ArrowLeft, HeartPulse, CheckCircle, Eye, EyeOff, ShieldCheck, Check, X } from "lucide-react";
 
 /* ── Password Strength ───────────────────────────────────── */
@@ -29,7 +30,6 @@ const ResetPassword = () => {
     const [showConfirm, setShowConfirm] = useState(false);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [error, setError] = useState("");
 
     const strengthen = getStrength(password);
     const passwordsMatch = confirmPassword.length > 0 && password.length > 0 && password === confirmPassword;
@@ -38,18 +38,16 @@ const ResetPassword = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (password !== confirmPassword) {
-            setError("Passwords do not match.");
+            toast.error("Passwords do not match.");
             return;
         }
-
         setLoading(true);
-        setError("");
         try {
             await resetPassword(token, password);
             setSuccess(true);
             setTimeout(() => navigate("/login"), 3000);
         } catch (err) {
-            setError(err?.message || "Failed to reset password. Link may be expired.");
+            toast.error(err?.message || "Failed to reset password. The link may have expired.");
         } finally {
             setLoading(false);
         }
@@ -140,7 +138,6 @@ const ResetPassword = () => {
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
                                 </div>
-                                {/* Strength bar */}
                                 {password.length > 0 && (
                                     <div className="flex items-center gap-3 pt-1 pl-1">
                                         <div className="flex gap-1 flex-1">
@@ -188,12 +185,6 @@ const ResetPassword = () => {
                                 {passwordsMismatch && <p className="flex items-center gap-1.5 text-[10px] font-black text-rose-500 pl-1 pt-0.5"><X size={11} strokeWidth={3} /> Passwords do not match</p>}
                             </div>
 
-                            {error && (
-                                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-5 rounded-2xl text-sm font-bold text-center shadow-sm">
-                                    ⚠️ {error}
-                                </div>
-                            )}
-
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -220,7 +211,7 @@ const ResetPassword = () => {
                 </div>
 
                 <div className="hidden sm:block absolute bottom-8 lg:bottom-10 text-slate-400 font-bold text-[10px] uppercase tracking-widest text-center w-full left-0 opacity-40">
-                    PharmaTrack — Pharmacy Management Portal
+                    PharmaTrack - Pharmacy Management Portal
                 </div>
             </div>
         </div>

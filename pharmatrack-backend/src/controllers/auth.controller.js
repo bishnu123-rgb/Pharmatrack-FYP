@@ -5,8 +5,8 @@ const crypto = require("crypto");
 const { logActivity } = require("../utils/logger");
 const { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } = require("../services/email.service");
 
-// Temporary store for pending registrations (In-memory for FYP simplicity)
-// In a production app, use Redis or a 'pending_users' table
+// Temporary in-memory store for pending (unverified) registrations.
+// Keyed by lowercase email. Cleared after successful verification or expiry.
 const pendingRegistrations = new Map();
 
 const generateTokens = (user) => {
@@ -36,17 +36,14 @@ exports.register = async (req, res) => {
     const lowerEmail = email.toLowerCase();
     const lowerUsername = username.toLowerCase();
 
-    // Strict Gmail Validation
     if (!lowerEmail.endsWith("@gmail.com")) {
       return res.status(403).json({ message: "Only @gmail.com addresses are permitted for registration." });
     }
 
-    // Role restriction
     if (role_name === 'admin' || role_name === 'ADMIN') {
       return res.status(403).json({ message: "Admin registration is restricted" });
     }
 
-    // Check if user exists in DB
     const userExist = await pool.query(
       "SELECT * FROM users WHERE LOWER(username) = $1 OR LOWER(email) = $2",
       [lowerUsername, lowerEmail]
@@ -56,31 +53,28 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Username or Email already exists." });
     }
 
-    // Check if already in pending registrations
     const pending = pendingRegistrations.get(lowerEmail);
     if (pending && pending.expires > Date.now()) {
       return res.status(400).json({ message: "Registration already in progress. Please check your email for the code." });
     }
 
-    // Generate 6-digit verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // SECURITY: Hash password BEFORE storing in temporary memory
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Store pending data
     pendingRegistrations.set(lowerEmail, {
       username,
       passwordHash,
       full_name,
-      email: lowerEmail, // explicitly save as lowercase
+      email: lowerEmail,
       role_name: role_name || 'staff',
       code: verificationCode,
-      expires: Date.now() + 600000 // 10 minutes
+      expires: Date.now() + 600000, // 10-minute window
+      isPending: role_name === 'pharmacist'
     });
 
-    // Send Real Email if configured
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         await sendVerificationEmail(lowerEmail, verificationCode);
@@ -91,8 +85,7 @@ exports.register = async (req, res) => {
 
     res.status(200).json({
       message: "Verification code sent to your Gmail.",
-      requiresVerification: true,
-      debug_code: verificationCode // For FYP demo visibility
+      requiresVerification: true
     });
 
   } catch (err) {
@@ -120,35 +113,38 @@ exports.verifyEmail = async (req, res) => {
       return res.status(400).json({ message: "Verification code expired." });
     }
 
-    // Code is valid! Create the user in DB
-    const { username, passwordHash, full_name, role_name } = pending;
+    const { username, passwordHash, full_name, role_name, isPending } = pending;
 
-    // Get role_id
+    // Resolve role_id (default to staff if not found)
     const roleResult = await pool.query("SELECT role_id FROM roles WHERE role_name = $1", [role_name]);
-    const roleId = roleResult.rows[0]?.role_id || 2; // Default to staff
+    const roleId = roleResult.rows[0]?.role_id || 2;
+
+    // Pharmacists require admin approval before they can log in
+    const initialStatus = isPending ? 'pending' : 'active';
 
     const newUser = await pool.query(
       `INSERT INTO users (username, password_hash, full_name, email, role_id, status)
-       VALUES ($1, $2, $3, $4, $5, 'active')
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING user_id, username, full_name, email`,
-      [username, passwordHash, full_name, lowerEmail, roleId]
+      [username, passwordHash, full_name, lowerEmail, roleId, initialStatus]
     );
 
-    // Clear pending
     pendingRegistrations.delete(lowerEmail);
 
-    // Send Welcome Email
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         await sendWelcomeEmail(lowerEmail, full_name);
-        console.log(`✅ WELCOME EMAIL SENT TO: ${lowerEmail}`);
       }
     } catch (mailErr) {
       console.error("WELCOME MAIL ERROR:", mailErr);
     }
 
+    const isPendingApproval = initialStatus === 'pending';
     res.status(201).json({
-      message: "Email verified and account created successfully",
+      message: isPendingApproval
+        ? "Account created. Your Pharmacist role is pending administrator approval before you can log in."
+        : "Email verified and account created successfully.",
+      requiresApproval: isPendingApproval,
       user: newUser.rows[0]
     });
 
@@ -168,12 +164,10 @@ exports.resendVerificationCode = async (req, res) => {
       return res.status(400).json({ message: "No pending registration found for this email." });
     }
 
-    // Generate new code
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
     pending.code = newCode;
-    pending.expires = Date.now() + 600000; // Reset expiry
+    pending.expires = Date.now() + 600000;
 
-    // Resend Email
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         await sendVerificationEmail(lowerEmail, newCode);
@@ -183,8 +177,7 @@ exports.resendVerificationCode = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "New verification code sent.",
-      debug_code: newCode
+      message: "New verification code sent."
     });
 
   } catch (err) {
@@ -197,50 +190,40 @@ exports.resendVerificationCode = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log("LOGIN ATTEMPT STARTED", { username });
 
     if (!username || !password) {
-      console.log("LOGIN REJECTED: Missing credentials");
       return res.status(400).json({ message: "Username and password required" });
     }
 
-    const query = `
-      SELECT 
-        u.user_id, u.username, u.password_hash, u.full_name, u.email, u.status,
-        r.role_name
-      FROM users u
-      JOIN roles r ON u.role_id = r.role_id
-      WHERE LOWER(u.username) = LOWER($1) OR LOWER(u.email) = LOWER($1)
-    `;
-
-    const result = await pool.query(query, [username]);
-
-    console.log("LOGIN DB QUERY RETURNED ROWS:", result.rows.length);
+    const result = await pool.query(
+      `SELECT u.user_id, u.username, u.password_hash, u.full_name, u.email, u.status, r.role_name
+       FROM users u
+       JOIN roles r ON u.role_id = r.role_id
+       WHERE LOWER(u.username) = LOWER($1) OR LOWER(u.email) = LOWER($1)`,
+      [username]
+    );
 
     if (result.rows.length === 0) {
-      console.log("LOGIN REJECTED: User not found in DB with that username/email");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const user = result.rows[0];
-    console.log("LOGIN USER FOUND: ", { user_id: user.user_id, status: user.status, role: user.role_name });
+
+    if (user.status === 'pending') {
+      return res.status(403).json({ message: "Your account is pending administrator approval. Please check back later." });
+    }
 
     if (user.status !== 'active') {
-      console.log("LOGIN REJECTED: Account inactive");
-      return res.status(403).json({ message: "Account is inactive. Please contact admin." });
+      return res.status(403).json({ message: "Account is inactive. Please contact your system administrator." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    console.log("LOGIN PASSWORD MATCH: ", isMatch);
-
     if (!isMatch) {
-      console.log("LOGIN REJECTED: Passwords did not match");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const { accessToken, refreshToken } = generateTokens(user);
 
-    // Update last login and refresh token
     await pool.query(
       "UPDATE users SET last_login = CURRENT_TIMESTAMP, refresh_token = $1 WHERE user_id = $2",
       [refreshToken, user.user_id]
@@ -325,12 +308,9 @@ exports.requestPasswordReset = async (req, res) => {
 
     await logActivity(user.user_id, "AUTH", `Password reset requested for ${user.username}`);
 
-    // Send Reset Email
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        console.log(`📡 ATTEMPTING TO SEND RESET EMAIL TO: ${email}`);
         await sendPasswordResetEmail(email, resetToken);
-        console.log(`✅ RESET EMAIL DISPATCHED TO: ${email}`);
       }
     } catch (mailErr) {
       console.error("RESET MAIL ERROR:", mailErr);
@@ -378,11 +358,10 @@ exports.resetPassword = async (req, res) => {
       }
     }
 
-    // 2. Hash new password
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // 3. Update password, save old one to history, and clear token
+    // Archive current password, then update and clear reset token
     const currentPassResult = await pool.query("SELECT password_hash FROM users WHERE user_id = $1", [user.user_id]);
     const currentHash = currentPassResult.rows[0].password_hash;
 
