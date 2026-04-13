@@ -1,25 +1,17 @@
-const API_BASE_URL = "http://localhost:5000/api";
-export const IMAGE_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+export const IMAGE_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 
 // Concurrent Refresh Lock
 let refreshPromise = null;
 
-/**
- * Silent Refresh Logic
- * Automatically renews the access token using the refresh token.
- * Consolidates multiple concurrent requests into a single refresh attempt.
- */
 export const refreshToken = async () => {
-  // If a refresh is already in progress, wait for it to complete
   if (refreshPromise) {
-    console.log("Waiting for existing refresh operation...");
     return refreshPromise;
   }
 
   const rfToken = localStorage.getItem("refreshToken");
   if (!rfToken) throw new Error("No refresh token available");
 
-  // Create a new refresh promise
   refreshPromise = (async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
@@ -40,7 +32,6 @@ export const refreshToken = async () => {
       localStorage.setItem("refreshToken", data.refreshToken);
       return data.accessToken;
     } finally {
-      // Release the lock regardless of success or failure
       refreshPromise = null;
     }
   })();
@@ -48,10 +39,6 @@ export const refreshToken = async () => {
   return refreshPromise;
 };
 
-/**
- * Centralized API Wrapper
- * Handles Authorization headers and automatic Silent Refresh
- */
 const apiCall = async (endpoint, options = {}) => {
   let token = localStorage.getItem("token");
 
@@ -74,17 +61,10 @@ const apiCall = async (endpoint, options = {}) => {
     const data = await res.clone().json();
     if (data.message === "Invalid or expired token") {
       try {
-        console.log("Session expired. Attempting silent refresh...");
         const newToken = await refreshToken();
-
-        // Retry original request with new token
-        const retryHeaders = {
-          ...headers,
-          "Authorization": `Bearer ${newToken}`,
-        };
+        const retryHeaders = { ...headers, "Authorization": `Bearer ${newToken}` };
         res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers: retryHeaders });
       } catch (err) {
-        // If refresh fails or returns another 401, re-throw to trigger page offline/logout logic
         throw new Error("Session timed out. Redirecting to login...");
       }
     }
@@ -181,7 +161,6 @@ export const updateProfile = (data) => apiCall("/users/profile", {
 export const uploadAvatar = (formData) => apiCall("/users/avatar", {
   method: "POST",
   body: formData,
-  isForm: true, // Signal to not set Content-Type: application/json
 });
 export const changePassword = (data) => apiCall("/users/change-password", {
   method: "PUT",
@@ -275,7 +254,7 @@ export const toggleSupplierStatus = (id) => apiCall(`/suppliers/${id}/toggle-sta
 });
 
 // ─── PUBLIC STORE API (No auth required) ──────────────────────────────────────
-const STORE_BASE = "http://localhost:5000/api/store";
+const STORE_BASE = `${API_BASE_URL}/store`;
 
 export const getStoreMedicines = () =>
   fetch(`${STORE_BASE}/medicines`).then(r => r.json());
@@ -304,7 +283,7 @@ export const fulfillStockRequest = (id) => apiCall(`/store/manage/requests/${id}
 
 
 export const sendMessageToAI = (message, role = "customer") =>
-  fetch(`http://localhost:5000/api/ai/chat`, {
+  fetch(`${API_BASE_URL}/ai/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, role }),
@@ -312,14 +291,14 @@ export const sendMessageToAI = (message, role = "customer") =>
 
 // Dedicated drug interaction check — uses its own backend endpoint with strict Gemini prompt
 export const checkDrugInteraction = (drug1, drug2) =>
-  fetch(`http://localhost:5000/api/ai/interaction-check`, {
+  fetch(`${API_BASE_URL}/ai/interaction-check`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ drug1, drug2 }),
   }).then(r => r.json());
 
 export const getInventoryInsights = (stats) =>
-  fetch(`http://localhost:5000/api/ai/inventory-insights`, {
+  fetch(`${API_BASE_URL}/ai/inventory-insights`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ stats }),

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Plus, Edit, Trash2, X, Calendar, DollarSign, Fingerprint, Loader2, AlertCircle, AlertTriangle, Search, Package, Eye, Barcode, ShieldCheck, FileDown, CheckCircle2, History, Zap, LayoutGrid, List, ChevronDown, ScanLine } from "lucide-react";
 import { getBatches, createBatch, updateBatch, deleteBatch, getMedicines, IMAGE_BASE_URL } from "../services/api";
+import toast from "react-hot-toast";
 
-// Elite Searchable Select Component for Medicine Lookups
+
 const SearchableSelect = ({ options, value, onChange, placeholder, disabled, theme = "light" }) => {
     const [search, setSearch] = useState("");
     const [open, setOpen] = useState(false);
@@ -74,33 +76,27 @@ const SearchableSelect = ({ options, value, onChange, placeholder, disabled, the
 };
 
 const Batches = () => {
+    const location = useLocation();
     const [batches, setBatches] = useState([]);
     const [medicines, setMedicines] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [editId, setEditId] = useState(null);
     const [viewingBatch, setViewingBatch] = useState(null);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterMedicine, setFilterMedicine] = useState("all");
+    const [searchTerm, setSearchTerm] = useState(location.state?.prefilledBatchNumber || "");
+    const [filterMedicine, setFilterMedicine] = useState(location.state?.prefilledMedicineId ? String(location.state.prefilledMedicineId) : "all");
     const [filterExpiry, setFilterExpiry] = useState("all"); // 'all', 'soon', 'expired'
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
     const [formData, setFormData] = useState({
         batch_number: "", expiry_date: "", cost_price: "", selling_price: "", medicine_id: "", barcode: ""
     });
-    const [error, setError] = useState("");
-    const [viewType, setViewType] = useState("grid"); // 'list', 'grid'
-    const [notifications, setNotifications] = useState([]);
+    const [formError, setFormError] = useState("");
+    const [fetchError, setFetchError] = useState("");
+    const [viewType, setViewType] = useState("grid");
     const [scannerOpen, setScannerOpen] = useState(false);
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const canEdit = ["admin", "pharmacist"].includes(user.role);
-
-    // Toast Helper
-    const notify = (message, type = "success") => {
-        const id = Date.now();
-        setNotifications(prev => [...prev, { id, message, type }]);
-        setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
-    };
 
     useEffect(() => {
         fetchData();
@@ -115,8 +111,16 @@ const Batches = () => {
             }
         };
         window.addEventListener("keydown", handleEsc);
+
+        // Auto-open modal if prefilled from Medicines page
+        if (location.state?.prefilledMedicineId) {
+            setFormData(prev => ({ ...prev, medicine_id: String(location.state.prefilledMedicineId) }));
+            setModalOpen(true);
+            setEditId(null);
+        }
+
         return () => window.removeEventListener("keydown", handleEsc);
-    }, []);
+    }, [location.state]);
 
     const fetchData = async () => {
         try {
@@ -124,7 +128,7 @@ const Batches = () => {
             setBatches(bat || []);
             setMedicines(meds || []);
         } catch (err) {
-            setError("Failed to fetch data. System might be offline.");
+            setFetchError("Failed to fetch data. System might be offline.");
         } finally {
             setLoading(false);
         }
@@ -132,19 +136,19 @@ const Batches = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
+        setFormError("");
         try {
             if (editId) {
                 await updateBatch(editId, formData);
             } else {
                 await createBatch(formData);
             }
-            notify(editId ? "Batch updated successfully!" : "New batch added to system!");
+            toast.success(editId ? "Batch updated successfully!" : "New batch archived successfully!");
             setModalOpen(false);
             setEditId(null);
             fetchData();
         } catch (err) {
-            setError(err.message || "Operation failed.");
+            setFormError(err.message || "Operation failed.");
         }
     };
 
@@ -157,7 +161,7 @@ const Batches = () => {
             medicine_id: batch.medicine_id || "",
             barcode: batch.barcode || ""
         });
-        setError("");
+        setFormError("");
         setEditId(batch.batch_id);
         setModalOpen(true);
     };
@@ -166,11 +170,11 @@ const Batches = () => {
         if (!deleteConfirmId) return;
         try {
             await deleteBatch(deleteConfirmId);
-            notify("Batch archived and moved to history!", "success");
+            toast.success("Batch archived successfully.");
             setDeleteConfirmId(null);
             fetchData();
         } catch (err) {
-            notify("Error: This batch cannot be deleted because it is linked to sales or purchases.", "error");
+            toast.error("Failed to archive batch.");
             setDeleteConfirmId(null);
         }
     };
@@ -255,12 +259,12 @@ const Batches = () => {
         </div>
     );
 
-    if (error && batches.length === 0) return (
+    if (fetchError && batches.length === 0) return (
         <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-6">
             <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center text-rose-500 shadow-sm border border-rose-100"><AlertCircle size={40} /></div>
             <div className="space-y-2">
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">System Offline</h2>
-                <p className="text-slate-500 font-bold max-w-sm">{error}</p>
+                <p className="text-slate-500 font-bold max-w-sm">{fetchError}</p>
             </div>
             <button onClick={() => window.location.reload()} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg active:scale-[0.98]">Retry Connection</button>
         </div>
@@ -275,7 +279,6 @@ const Batches = () => {
                         <p className="text-slate-500 font-bold">Track barcodes, active pricing, and ensure safe shelf-life.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        {/* View Toggle */}
                         <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-sm mr-2">
                             <button
                                 onClick={() => setViewType("grid")}
@@ -297,7 +300,7 @@ const Batches = () => {
                             <FileDown size={16} /> Export CSV
                         </button>
                         {canEdit && (
-                            <button onClick={() => { setError(""); setModalOpen(true); setEditId(null); setFormData({ batch_number: "", expiry_date: "", cost_price: "", selling_price: "", medicine_id: "", barcode: "" }); }} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                            <button onClick={() => { setFormError(""); setModalOpen(true); setEditId(null); setFormData({ batch_number: "", expiry_date: "", cost_price: "", selling_price: "", medicine_id: "", barcode: "" }); }} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
                                 <Plus size={16} /> Add New Batch
                             </button>
                         )}
@@ -320,7 +323,7 @@ const Batches = () => {
                     </div>
                 </div>
 
-                {/* Quick-Filter Navigation */}
+
                 <div className="flex flex-wrap items-center gap-2">
                     <button onClick={() => setFilterExpiry('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterExpiry === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}>
                         All Batches
@@ -492,7 +495,7 @@ const Batches = () => {
                     </div>
                 )}
 
-                {/* Mobile View: High-Fidelity Cards */}
+
                 <div className="md:hidden space-y-4">
                     {filteredBatches.map((b) => {
                         const status = getExpiryStatus(b.expiry_date);
@@ -551,7 +554,7 @@ const Batches = () => {
                 </div>
             </div>
 
-            {/* Compact Fact Sheet Sheet */}
+
             {
                 viewingBatch && (
                     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-start pt-16 justify-center p-4" onClick={() => setViewingBatch(null)}>
@@ -706,7 +709,13 @@ const Batches = () => {
                                         </div>
                                     </div>
                                 </div>
-                                {error && <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 text-center">{error}</div>}
+                                {parseFloat(formData.cost_price) > parseFloat(formData.selling_price) && formData.cost_price && formData.selling_price && (
+                                    <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl text-xs font-bold flex items-center gap-2">
+                                        <AlertTriangle size={14} className="shrink-0" />
+                                        Selling price is lower than cost price — this batch will sell at a loss.
+                                    </div>
+                                )}
+                                {formError && <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 text-center">{formError}</div>}
                             </form>
 
                             {/* Fixed Footer */}
@@ -721,7 +730,7 @@ const Batches = () => {
                 )
             }
 
-            {/* Delete Confirm Modal */}
+
             {
                 deleteConfirmId && (
                     <div className="fixed inset-0 bg-[#0f172a]/60 backdrop-blur-sm z-[120] flex items-start pt-32 justify-center p-4 animate-in fade-in duration-200">
@@ -772,8 +781,8 @@ const Batches = () => {
                                 value={formData.barcode}
                                 onChange={(e) => {
                                     setFormData({ ...formData, barcode: e.target.value.toUpperCase() });
-                                    if (e.target.value.length >= 6) {
-                                        notify("Barcode Detected & Captured!", "success");
+                                    if (e.target.value.length >= 8) {
+                                        toast.success("Barcode Detected & Captured!");
                                         setTimeout(() => setScannerOpen(false), 600);
                                     }
                                 }}
@@ -806,15 +815,6 @@ const Batches = () => {
                 }
             `}} />
 
-            {/* Notification Center */}
-            <div className="fixed bottom-8 right-8 z-[200] flex flex-col gap-3 pointer-events-none">
-                {notifications.map(n => (
-                    <div key={n.id} className={`pointer-events-auto px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center gap-3 animate-in slide-in-from-right-10 duration-500 ${n.type === 'success' ? 'bg-emerald-600/90 text-white border-emerald-400/30' : 'bg-rose-600/90 text-white border-rose-400/30'}`}>
-                        {n.type === 'success' ? <CheckCircle2 size={20} className="animate-bounce" /> : <AlertCircle size={20} className="animate-pulse" />}
-                        <p className="font-black text-sm tracking-tight">{n.message}</p>
-                    </div>
-                ))}
-            </div>
         </>
     );
 };
