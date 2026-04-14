@@ -64,7 +64,7 @@ const Layout = ({ children }) => {
     return (
         <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
             {/* Professional Sidebar */}
-            <aside className="w-72 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl z-50">
+            <aside className="w-72 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl z-50 no-print">
                 <div className="p-8 pb-10">
                     <div className="flex items-center gap-3 group cursor-default">
                         <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-300">
@@ -109,7 +109,7 @@ const Layout = ({ children }) => {
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col relative overflow-hidden">
                 {/* Elite Topbar */}
-                <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-10 flex items-center justify-between sticky top-0 z-40">
+                <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-10 flex items-center justify-between sticky top-0 z-40 no-print">
                     <div>
                         <h1 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Operational Dashboard</h1>
                         <p className="text-lg font-bold text-slate-800">System Overview</p>

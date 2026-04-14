@@ -1,306 +1,56 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-export const IMAGE_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
+require("dotenv").config();
 
-// Concurrent Refresh Lock
-let refreshPromise = null;
+const express = require("express");
+const cors = require("cors");
 
-export const refreshToken = async () => {
-  if (refreshPromise) {
-    return refreshPromise;
-  }
+const authRoutes = require("./routes/auth.routes");
+const categoryRoutes = require("./routes/category.routes");
+const medicineRoutes = require("./routes/medicine.routes");
+const batchRoutes = require("./routes/batch.routes");
+const purchaseRoutes = require("./routes/purchase.routes");
+const saleRoutes = require("./routes/sale.routes");
+const alertRoutes = require("./routes/alert.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
+const userRoutes = require("./routes/user.routes");
+const supplierRoutes = require("./routes/supplier.routes");
+const storeRoutes = require("./routes/store.routes");
+const aiRoutes = require("./routes/ai.routes");
+const aiService = require("./services/ai.service");
+const app = express();
 
-  const rfToken = localStorage.getItem("refreshToken");
-  if (!rfToken) throw new Error("No refresh token available");
-
-  refreshPromise = (async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: rfToken }),
-      });
-
-      if (!res.ok) {
-        // Full logout on failure
-        localStorage.clear();
-        window.location.href = "/login";
-        throw new Error("Session expired. Please login again.");
-      }
-
-      const data = await res.json();
-      localStorage.setItem("token", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      return data.accessToken;
-    } finally {
-      refreshPromise = null;
-    }
-  })();
-
-  return refreshPromise;
-};
-
-const apiCall = async (endpoint, options = {}) => {
-  let token = localStorage.getItem("token");
-
-  // Duck-type check for FormData to avoid cross-context instanceof failures
-  const isFormData = options.body && typeof options.body.append === "function";
-
-  const headers = {
-    ...(token && { "Authorization": `Bearer ${token}` }),
-    ...options.headers,
-  };
-
-  if (!isFormData && !headers["Content-Type"]) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  let res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-
-  // Handle Token Expiration (401 Unauthorized)
-  if (res.status === 401) {
-    const data = await res.clone().json();
-    if (data.message === "Invalid or expired token") {
-      try {
-        const newToken = await refreshToken();
-        const retryHeaders = { ...headers, "Authorization": `Bearer ${newToken}` };
-        res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers: retryHeaders });
-      } catch (err) {
-        throw new Error("Session timed out. Redirecting to login...");
-      }
-    }
-  }
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error || "Action failed");
-  return data;
-};
-
-// --- AUTH ---
-export const loginUser = async (username, password) => {
-  const res = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Login failed");
-  return data;
-};
-
-export const registerUser = async (userData) => {
-  const res = await fetch(`${API_BASE_URL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Registration failed");
-  return data;
-};
-
-export const verifyEmail = async (email, code) => {
-  const res = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, code }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Verification failed");
-  return data;
-};
-
-export const resendCode = async (email) => {
-  const res = await fetch(`${API_BASE_URL}/auth/resend-code`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to resend code");
-  return data;
-};
-
-
-export const forgotPassword = async (email) => {
-  const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to request password reset");
-  return data;
-};
-
-export const resetPassword = async (token, password) => {
-  const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to reset password");
-  return data;
-};
-
-
-// --- USERS ---
-export const getProfile = () => apiCall("/users/profile");
-export const getUsers = () => apiCall("/users");
-export const updateUser = (id, data) => apiCall(`/users/${id}/status`, {
-  method: "PUT",
-  body: JSON.stringify(data),
-});
-export const deleteUser = (id) => apiCall(`/users/${id}`, {
-  method: "DELETE",
-});
-export const updateProfile = (data) => apiCall("/users/profile", {
-  method: "PUT",
-  body: JSON.stringify(data),
-});
-export const uploadAvatar = (formData) => apiCall("/users/avatar", {
-  method: "POST",
-  body: formData,
-});
-export const changePassword = (data) => apiCall("/users/change-password", {
-  method: "PUT",
-  body: JSON.stringify(data),
+app.use((req, res, next) => {
+  console.log("➡️", req.method, req.url);
+  next();
 });
 
-// --- DASHBOARD ---
-export const getDashboardSummary = () => apiCall("/dashboard/summary");
+const path = require("path");
 
-// --- CATEGORIES ---
-export const getCategories = () => apiCall("/categories");
-export const createCategory = (name) => apiCall("/categories", {
-  method: "POST",
-  body: JSON.stringify({ name }),
-});
-export const updateCategory = (id, name) => apiCall(`/categories/${id}`, {
-  method: "PUT",
-  body: JSON.stringify({ name }),
-});
-export const deleteCategory = (id) => apiCall(`/categories/${id}`, {
-  method: "DELETE",
-});
+app.use(cors());
+app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// --- MEDICINES ---
-export const getMedicines = () => apiCall("/medicines");
-export const createMedicine = (data) => apiCall("/medicines", {
-  method: "POST",
-  body: (data && typeof data.append === "function") ? data : JSON.stringify(data),
-});
-export const updateMedicine = (id, data) => apiCall(`/medicines/${id}`, {
-  method: "PUT",
-  body: (data && typeof data.append === "function") ? data : JSON.stringify(data),
-});
-export const deleteMedicine = (id) => apiCall(`/medicines/${id}`, {
-  method: "DELETE",
+app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/medicines", medicineRoutes);
+app.use("/api/batches", batchRoutes);
+app.use("/api/purchases", purchaseRoutes);
+app.use("/api/sales", saleRoutes);
+app.use("/api/alerts", alertRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/suppliers", supplierRoutes);
+app.use("/api/store", storeRoutes);
+app.use("/api/ai", aiRoutes);
+
+// Train AI on startup
+aiService.init();
+
+
+app.get("/", (req, res) => {
+  res.send("PharmaTrack API running");
 });
 
-// --- BATCHES ---
-export const getBatches = () => apiCall("/batches");
-export const createBatch = (data) => apiCall("/batches", {
-  method: "POST",
-  body: JSON.stringify(data),
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-export const updateBatch = (id, data) => apiCall(`/batches/${id}`, {
-  method: "PUT",
-  body: JSON.stringify(data),
-});
-export const deleteBatch = (id) => apiCall(`/batches/${id}`, {
-  method: "DELETE",
-});
-
-// --- SALES ---
-export const createSale = (data) => apiCall("/sales", {
-  method: "POST",
-  body: JSON.stringify(data),
-});
-export const getSales = () => apiCall("/sales");
-export const getSalesStats = () => apiCall("/sales/stats");
-export const getSaleById = (id) => apiCall(`/sales/${id}`);
-
-// --- PURCHASES ---
-export const createPurchase = (data) => apiCall("/purchases", {
-  method: "POST",
-  body: JSON.stringify(data),
-});
-export const getPurchases = () => apiCall("/purchases");
-export const getPurchaseById = (id) => apiCall(`/purchases/${id}`);
-
-// --- ALERTS ---
-export const getAlerts = () => apiCall("/alerts");
-export const triggerAlertGeneration = () => apiCall("/alerts/generate", {
-  method: "POST",
-});
-
-// --- SUPPLIERS ---
-export const getSuppliers = () => apiCall("/suppliers");
-export const createSupplier = (data) => apiCall("/suppliers", {
-  method: "POST",
-  body: JSON.stringify(data),
-});
-export const updateSupplier = (id, data) => apiCall(`/suppliers/${id}`, {
-  method: "PUT",
-  body: JSON.stringify(data),
-});
-export const deleteSupplier = (id) => apiCall(`/suppliers/${id}`, {
-  method: "DELETE",
-});
-
-export const toggleSupplierStatus = (id) => apiCall(`/suppliers/${id}/toggle-status`, {
-  method: "PATCH",
-});
-
-// ─── PUBLIC STORE API (No auth required) ──────────────────────────────────────
-const STORE_BASE = `${API_BASE_URL}/store`;
-
-export const getStoreMedicines = () =>
-  fetch(`${STORE_BASE}/medicines`).then(r => r.json());
-
-export const getStoreMedicineDetail = (id) =>
-  fetch(`${STORE_BASE}/medicines/${id}`).then(r => {
-    if (!r.ok) throw new Error("Medicine not found");
-    return r.json();
-  });
-
-export const getStoreCategories = () =>
-  fetch(`${STORE_BASE}/categories`).then(r => r.json());
-
-export const notifyStock = (data) =>
-  fetch(`${STORE_BASE}/notify-stock`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  }).then(r => r.json());
-
-export const getStockRequests = () => apiCall("/store/manage/requests");
-
-export const fulfillStockRequest = (id) => apiCall(`/store/manage/requests/${id}/fulfill`, {
-  method: "PUT",
-});
-
-
-export const sendMessageToAI = (message, role = "customer") =>
-  fetch(`${API_BASE_URL}/ai/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, role }),
-  }).then(r => r.json());
-
-// Dedicated drug interaction check — uses its own backend endpoint with strict Gemini prompt
-export const checkDrugInteraction = (drug1, drug2) =>
-  fetch(`${API_BASE_URL}/ai/interaction-check`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ drug1, drug2 }),
-  }).then(r => r.json());
-
-export const getInventoryInsights = (stats) =>
-  fetch(`${API_BASE_URL}/ai/inventory-insights`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stats }),
-  }).then(r => r.json());
-

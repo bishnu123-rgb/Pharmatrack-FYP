@@ -21,9 +21,9 @@ import {
 import { getDashboardSummary, getInventoryInsights } from "../services/api";
 
 const StatCard = ({ title, value, icon: Icon, color, subtext, trend, onClick }) => (
-    <div 
+    <div
         onClick={onClick}
-        className={`bg-white rounded-[2rem] p-8 premium-shadow border border-slate-100 group transition-all duration-500 relative overflow-hidden ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:border-indigo-200' : ''}`}
+        className={`bg-white/70 backdrop-blur-md rounded-[2.5rem] p-8 premium-shadow border border-white/20 ring-1 ring-slate-900/5 group transition-all duration-500 relative overflow-hidden ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:border-indigo-200' : ''}`}
     >
         <div className={`absolute top-0 right-0 w-32 h-32 ${color} opacity-[0.03] rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:translate-x-4 transition-transform duration-700`}></div>
 
@@ -88,7 +88,6 @@ const Dashboard = () => {
                 setStats(data);
             } catch (err) {
                 setError("Dashboard data failed to load.");
-                console.error(err);
             } finally {
                 setLoading(false);
             }
@@ -145,7 +144,7 @@ const Dashboard = () => {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 space-y-10 pb-10">
-            {/* Elite Personalized Header */}
+            {/* Header Section */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div className="space-y-2">
                     <div className="flex items-center gap-3 text-indigo-600 font-black tracking-[0.2em] uppercase text-[10px] animate-pulse">
@@ -164,7 +163,7 @@ const Dashboard = () => {
                     </p>
                 </div>
 
-                {/* Unified Quick Actions */}
+                {/* Quick Actions */}
                 <div className="flex flex-wrap items-center gap-4">
                     <button
                         onClick={() => navigate('/sales')}
@@ -251,9 +250,13 @@ const Dashboard = () => {
 
             </div>
 
-            {/* Middle Section: Chart and Notices */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-10 premium-shadow border border-slate-100 relative group overflow-hidden flex flex-col min-h-[400px]">
+            {/* Sales Chart and Notices */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+                {/* Background Glass Accent Orbs */}
+                <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-violet-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+                <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-10 premium-shadow border border-white/40 relative group overflow-hidden flex flex-col min-h-[400px]">
                     <div className="flex justify-between items-center mb-10">
                         <div className="space-y-1">
                             <h3 className="text-xl font-black text-slate-900 tracking-tight">Sales Performance</h3>
@@ -317,21 +320,23 @@ const Dashboard = () => {
 
                     <div className="space-y-6 relative z-10">
                         {stats?.low_stock_items > 0 && (
-                            <div className="flex gap-4 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:scale-[1.02] transition-transform cursor-default">
+                            <div onClick={() => navigate('/alerts')} className="flex gap-4 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:scale-[1.02] hover:bg-amber-500/20 transition-all cursor-pointer group">
                                 <AlertCircle className="text-amber-500 shrink-0" size={20} />
-                                <div>
+                                <div className="flex-1">
                                     <p className="text-sm font-black text-amber-100 leading-tight tracking-tight">Stock Needs Re-order</p>
                                     <p className="text-xs text-amber-500/80 font-bold mt-1.5">{stats.low_stock_items} items are running low.</p>
                                 </div>
+                                <ArrowRight className="text-amber-500/50 opacity-0 group-hover:opacity-100 transition-opacity mt-auto mb-auto ml-auto" size={16} />
                             </div>
                         )}
                         {stats?.expired_batches > 0 && (
-                            <div className="flex gap-4 p-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:scale-[1.02] transition-transform cursor-default">
+                            <div onClick={() => navigate('/alerts')} className="flex gap-4 p-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:scale-[1.02] hover:bg-rose-500/20 transition-all cursor-pointer group">
                                 <Calendar className="text-rose-500 shrink-0" size={20} />
-                                <div>
+                                <div className="flex-1">
                                     <p className="text-sm font-black text-rose-100 leading-tight tracking-tight">Expired Stock</p>
                                     <p className="text-xs text-rose-500/80 font-bold mt-1.5">{stats.expired_batches} batches have already expired.</p>
                                 </div>
+                                <ArrowRight className="text-rose-500/50 opacity-0 group-hover:opacity-100 transition-opacity mt-auto mb-auto ml-auto" size={16} />
                             </div>
                         )}
 
@@ -352,10 +357,12 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Bottom Row: Recent Activity and Fast Moving */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Activity and Fast Moving */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+                <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-blue-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
                 {/* Recent Activity Log */}
-                <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-10 premium-shadow border border-slate-100 flex flex-col min-h-[400px]">
+                <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-10 premium-shadow border border-white/40 flex flex-col min-h-[400px]">
                     <div className="flex justify-between items-center mb-8">
                         <div className="space-y-1">
                             <h3 className="text-xl font-black text-slate-900 tracking-tight">Live Activity Log</h3>
@@ -369,7 +376,8 @@ const Dashboard = () => {
                             stats.activities.map((activity, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-100 hover:bg-slate-50/50 transition-all group scale-in"
+                                    onClick={() => navigate(activity.type === 'SALE' ? '/sales' : '/purchases')}
+                                    className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-100 hover:bg-slate-50/50 shadow-sm hover:shadow-md transition-all group scale-in cursor-pointer"
                                     style={{ animationDelay: `${idx * 100}ms` }}
                                 >
                                     <div className="flex items-center gap-5">
@@ -404,7 +412,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Fast Moving Items */}
-                <div className="bg-white rounded-[2.5rem] p-10 premium-shadow border border-slate-100 flex flex-col min-h-[400px] relative overflow-hidden">
+                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-10 premium-shadow border border-white/40 flex flex-col min-h-[400px] relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 pt-10 opacity-5">
                         <TrendingUp size={120} />
                     </div>
@@ -413,7 +421,7 @@ const Dashboard = () => {
                     <div className="space-y-6 relative z-10 h-full">
                         {stats.fast_moving && stats.fast_moving.length > 0 ? (
                             stats.fast_moving.map((item, idx) => (
-                                <div key={idx} className="space-y-3 group/item">
+                                <div key={idx} onClick={() => navigate('/medicines')} className="space-y-3 group/item p-3 -mx-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-100">
                                     <div className="flex justify-between items-end">
                                         <p className="text-sm font-black text-slate-800 tracking-tight group-hover/item:text-indigo-600 transition-colors uppercase truncate max-w-[150px]">{item.name}</p>
                                         <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{item.sold} sold</span>
@@ -445,7 +453,7 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* AI Strategy Node - Floating Action */}
+            {/* Smart Strategy Modal */}
             <div className="fixed top-24 right-8 z-[100] flex flex-col items-end gap-4 animate-in slide-in-from-right-10 duration-700">
                 <button
                     onClick={handleGetInsight}

@@ -152,7 +152,6 @@ exports.getDashboardSummary = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("DASHBOARD ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };
