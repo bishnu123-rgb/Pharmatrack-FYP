@@ -7,6 +7,6 @@ const { createSale, getSales, getSaleById, getSalesStats } = require("../control
 router.get("/", auth.auth, getSales);
 router.get("/stats", auth.auth, getSalesStats);
 router.get("/:id", auth.auth, getSaleById);
-router.post("/", auth.auth, createSale);
+router.post("/", auth.auth, auth.authorize(["admin", "pharmacist", "staff"]), createSale);
 
 module.exports = router;

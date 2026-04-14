@@ -142,7 +142,7 @@ const Layout = ({ children }) => {
                         {children}
                     </div>
                 </div>
-                <AIChatbot role="admin" />
+                <AIChatbot role={user.role} />
             </main>
         </div>
     );
