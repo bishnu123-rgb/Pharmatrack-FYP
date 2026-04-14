@@ -25,11 +25,24 @@ const Medicines = () => {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [viewType, setViewType] = useState("grid");
     const [fetchError, setFetchError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const canEdit = ["admin", "pharmacist"].includes(user.role);
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    // Global Scroll Lock for Modals
+    useEffect(() => {
+        if (modalOpen || viewingMed || deleteConfirmId) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto";
+        }
+        return () => { document.body.style.overflow = "auto"; };
+    }, [modalOpen, viewingMed, deleteConfirmId]);
 
     useEffect(() => {
         if (!formData.imageFile) { setPreviewUrl(null); return; }
@@ -65,6 +78,7 @@ const Medicines = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError("");
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             Object.keys(formData).forEach(key => {
@@ -85,6 +99,8 @@ const Medicines = () => {
             fetchData();
         } catch (err) {
             setFormError(err.message || "Operation failed.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -424,7 +440,7 @@ const Medicines = () => {
             </div>
 
             {viewingMed && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-start pt-16 justify-center p-4">
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[110] flex items-start pt-16 justify-center p-4 animate-in fade-in duration-300">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-5 border-b border-slate-100 flex items-start gap-4 bg-slate-50 relative shrink-0">
                             <button onClick={() => setViewingMed(null)} className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-900 bg-white rounded-lg shadow-sm border border-slate-200 transition-colors"><X size={16} /></button>
@@ -475,140 +491,147 @@ const Medicines = () => {
                                 </div>
                             )}
 
-                            <div className="pt-2">
-                                <button
-                                    onClick={() => navigate('/batches', { state: { prefilledMedicineId: viewingMed.medicine_id } })}
-                                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-3"
-                                >
-                                    <Plus size={16} /> New Stock Entry
-                                </button>
-                                <p className="text-[9px] text-center text-slate-400 font-bold mt-3 uppercase tracking-tighter">Enter new batch details for this medicine</p>
-                            </div>
+                            {canEdit && (
+                                <div className="pt-2">
+                                    <button
+                                        onClick={() => navigate('/batches', { state: { prefilledMedicineId: viewingMed.medicine_id } })}
+                                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                    >
+                                        <Plus size={16} /> New Stock Entry
+                                    </button>
+                                    <p className="text-[9px] text-center text-slate-400 font-bold mt-3 uppercase tracking-tighter">Enter new batch details for this medicine</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
-            {modalOpen && (
-                <div className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-xl flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
-                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl flex flex-col relative overflow-hidden">
-                        <div className="p-5 border-b border-slate-100 bg-white shrink-0 z-10 flex justify-between items-center">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-900 tracking-tight">{editId ? "Update Medicine" : "Add New Medicine"}</h2>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Inventory Data Entry</p>
-                            </div>
-                            <button type="button" onClick={() => setModalOpen(false)} className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl transition-colors"><X size={18} /></button>
-                        </div>
-
-                        <form id="medForm" onSubmit={handleSubmit} className="p-6 bg-white space-y-5">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                <div className="space-y-1 md:col-span-2">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Full Name</label>
-                                    <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm" placeholder="e.g. Paracetamol" />
+            {
+                modalOpen && (
+                    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl flex flex-col relative overflow-hidden">
+                            <div className="p-5 border-b border-slate-100 bg-white shrink-0 z-10 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{editId ? "Update Medicine" : "Add New Medicine"}</h2>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Inventory Data Entry</p>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Medicine Group</label>
-                                    <select required value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm appearance-none cursor-pointer">
-                                        <option value="" disabled hidden>Choose Group</option>
-                                        {categories.map((cat) => <option key={cat.category_id} value={cat.category_id}>{cat.name}</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Power / Size</label>
-                                    <input type="text" value={formData.strength} onChange={(e) => setFormData({ ...formData, strength: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm" placeholder="e.g. 500mg" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Medicine Type</label>
-                                    <select value={formData.dosage_form} onChange={(e) => setFormData({ ...formData, dosage_form: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm appearance-none cursor-pointer">
-                                        <option value="" disabled hidden>Select Type</option>
-                                        <option value="Tablet">Tablet</option>
-                                        <option value="Capsule">Capsule</option>
-                                        <option value="Syrup">Syrup</option>
-                                        <option value="Injection">Injection</option>
-                                        <option value="Ointment">Ointment</option>
-                                        <option value="Drops">Drops</option>
-                                        <option value="Inhaler">Inhaler</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Manufacturer</label>
-                                    <input type="text" value={formData.manufacturer} onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm" placeholder="e.g. GSK, Pfizer" />
-                                </div>
+                                <button type="button" onClick={() => setModalOpen(false)} className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl transition-colors"><X size={18} /></button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1"><ShieldAlert size={10} /> Simple Summary</label>
-                                    <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm resize-none overflow-y-auto custom-scrollbar" placeholder="General info about this item..." rows="3" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest ml-1 block">What it treats (Used For)</label>
-                                    <textarea value={formData.indications} onChange={(e) => setFormData({ ...formData, indications: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-indigo-50/30 border border-indigo-100 focus:border-indigo-400 outline-none text-sm font-bold text-indigo-900 shadow-sm resize-none overflow-y-auto custom-scrollbar" placeholder="e.g. Relieves pain..." rows="3" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1 block">Side Effects &amp; Risks</label>
-                                    <textarea value={formData.side_effects} onChange={(e) => setFormData({ ...formData, side_effects: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-amber-50/30 border border-amber-100 focus:border-amber-400 outline-none text-sm font-bold text-amber-900 shadow-sm resize-none overflow-y-auto custom-scrollbar" placeholder="e.g. Nausea, headache..." rows="3" />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Product Photo</label>
-                                    <div className="flex items-center gap-4">
-                                        {(previewUrl || formData.image_url) && (
-                                            <div className="w-12 h-12 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 shrink-0">
-                                                <img
-                                                    key={previewUrl || formData.image_url}
-                                                    src={previewUrl || getImageUrl(formData.image_url)}
-                                                    alt="Preview"
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Error"; }}
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="relative overflow-hidden flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus-within:border-indigo-400 flex items-center justify-between shadow-sm cursor-pointer hover:bg-slate-100 transition-colors">
-                                            <span className="text-sm font-bold text-slate-500 truncate">
-                                                {formData.imageFile ? formData.imageFile.name : (formData.image_url ? "Change Photo" : "Choose Photo")}
-                                            </span>
-                                            <input type="file" accept="image/*" onChange={(e) => setFormData({ ...formData, imageFile: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                        </div>
+                            <form id="medForm" onSubmit={handleSubmit} className="p-6 bg-white space-y-5">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="space-y-1 md:col-span-2">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Full Name</label>
+                                        <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm" placeholder="e.g. Paracetamol" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Medicine Group</label>
+                                        <select required value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm appearance-none cursor-pointer">
+                                            <option value="" disabled hidden>Choose Group</option>
+                                            {categories.map((cat) => <option key={cat.category_id} value={cat.category_id}>{cat.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Power / Size</label>
+                                        <input type="text" value={formData.strength} onChange={(e) => setFormData({ ...formData, strength: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm" placeholder="e.g. 500mg" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Medicine Type</label>
+                                        <select value={formData.dosage_form} onChange={(e) => setFormData({ ...formData, dosage_form: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm appearance-none cursor-pointer">
+                                            <option value="" disabled hidden>Select Type</option>
+                                            <option value="Tablet">Tablet</option>
+                                            <option value="Capsule">Capsule</option>
+                                            <option value="Syrup">Syrup</option>
+                                            <option value="Injection">Injection</option>
+                                            <option value="Ointment">Ointment</option>
+                                            <option value="Drops">Drops</option>
+                                            <option value="Inhaler">Inhaler</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Manufacturer</label>
+                                        <input type="text" value={formData.manufacturer} onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm" placeholder="e.g. GSK, Pfizer" />
                                     </div>
                                 </div>
-                                <div className="flex items-center p-3 border border-rose-100 bg-rose-50 rounded-xl cursor-pointer" onClick={(e) => { e.preventDefault(); setFormData({ ...formData, requires_prescription: !formData.requires_prescription }); }}>
-                                    <input type="checkbox" checked={formData.requires_prescription} onChange={() => { }} className="w-4 h-4 text-rose-600 border-rose-300 rounded focus:ring-rose-500" />
-                                    <span className="ml-2 text-[10px] font-black text-rose-700 uppercase tracking-widest">Requires Prescription</span>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1"><ShieldAlert size={10} /> Simple Summary</label>
+                                        <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-slate-900 shadow-sm resize-none overflow-y-auto custom-scrollbar" placeholder="General info about this item..." rows="3" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest ml-1 block">What it treats (Used For)</label>
+                                        <textarea value={formData.indications} onChange={(e) => setFormData({ ...formData, indications: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-indigo-50/30 border border-indigo-100 focus:border-indigo-400 outline-none text-sm font-bold text-indigo-900 shadow-sm resize-none overflow-y-auto custom-scrollbar" placeholder="e.g. Relieves pain..." rows="3" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1 block">Side Effects &amp; Risks</label>
+                                        <textarea value={formData.side_effects} onChange={(e) => setFormData({ ...formData, side_effects: e.target.value })} className="w-full px-4 py-2.5 rounded-xl bg-amber-50/30 border border-amber-100 focus:border-amber-400 outline-none text-sm font-bold text-amber-900 shadow-sm resize-none overflow-y-auto custom-scrollbar" placeholder="e.g. Nausea, headache..." rows="3" />
+                                    </div>
                                 </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Product Photo</label>
+                                        <div className="flex items-center gap-4">
+                                            {(previewUrl || formData.image_url) && (
+                                                <div className="w-12 h-12 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 shrink-0">
+                                                    <img
+                                                        key={previewUrl || formData.image_url}
+                                                        src={previewUrl || getImageUrl(formData.image_url)}
+                                                        alt="Preview"
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Error"; }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className="relative overflow-hidden flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus-within:border-indigo-400 flex items-center justify-between shadow-sm cursor-pointer hover:bg-slate-100 transition-colors">
+                                                <span className="text-sm font-bold text-slate-500 truncate">
+                                                    {formData.imageFile ? formData.imageFile.name : (formData.image_url ? "Change Photo" : "Choose Photo")}
+                                                </span>
+                                                <input type="file" accept="image/*" onChange={(e) => setFormData({ ...formData, imageFile: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center p-3 border border-rose-100 bg-rose-50 rounded-xl cursor-pointer" onClick={(e) => { e.preventDefault(); setFormData({ ...formData, requires_prescription: !formData.requires_prescription }); }}>
+                                        <input type="checkbox" checked={formData.requires_prescription} onChange={() => { }} className="w-4 h-4 text-rose-600 border-rose-300 rounded focus:ring-rose-500" />
+                                        <span className="ml-2 text-[10px] font-black text-rose-700 uppercase tracking-widest">Requires Prescription</span>
+                                    </div>
+                                </div>
+
+                                {formError && <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 text-center">{formError}</div>}
+                            </form>
+
+                            <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 z-10 flex gap-3">
+                                <button type="button" onClick={() => setModalOpen(false)} className="flex-[0.5] py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors shadow-sm">Cancel</button>
+                                <button type="submit" form="medForm" className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
+                                    {editId ? "Save Changes" : "Save Medicine"}
+                                </button>
                             </div>
-
-                            {formError && <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 text-center">{formError}</div>}
-                        </form>
-
-                        <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 z-10 flex gap-3">
-                            <button type="button" onClick={() => setModalOpen(false)} className="flex-[0.5] py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors shadow-sm">Cancel</button>
-                            <button type="submit" form="medForm" className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
-                                {editId ? "Save Changes" : "Save Medicine"}
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {deleteConfirmId && (
-                <div className="fixed inset-0 bg-[#0f172a]/60 backdrop-blur-sm z-[120] flex items-start pt-32 justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative text-center">
-                        <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-5 border-[6px] border-rose-100">
-                            <AlertTriangle size={36} />
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Archive Medicine?</h3>
-                        <p className="text-sm font-bold text-slate-500 mb-8 leading-relaxed">This medicine will be removed from the active catalog. Existing batch and sales records remain unaffected.</p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black uppercase text-[10px] tracking-widest transition-colors shadow-sm active:scale-95">Cancel</button>
-                            <button onClick={executeDelete} className="flex-[1.5] py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-rose-500/30 transition-all active:scale-95">Confirm Archive</button>
+            {
+                deleteConfirmId && (
+                    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[120] flex items-start pt-32 justify-center p-4 animate-in fade-in duration-200">
+                        <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative text-center">
+                            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-5 border-[6px] border-rose-100">
+                                <AlertTriangle size={36} />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Archive Medicine?</h3>
+                            <p className="text-sm font-bold text-slate-500 mb-8 leading-relaxed">This medicine will be removed from the active catalog. Existing batch and sales records remain unaffected.</p>
+                            <div className="flex gap-3">
+                                <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black uppercase text-[10px] tracking-widest transition-colors shadow-sm active:scale-95">Cancel</button>
+                                <button onClick={executeDelete} className="flex-[1.5] py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-rose-500/30 transition-all active:scale-95">Confirm Archive</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 };

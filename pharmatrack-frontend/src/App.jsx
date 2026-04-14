@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 
 import StoreLanding from "./pages/store/StoreLanding";
 import MedicineDetail from "./pages/store/MedicineDetail";
+import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Layout from "./components/Layout";
@@ -159,7 +160,7 @@ function App() {
         <Route path="/store/medicine/:id" element={<MedicineDetail />} />
 
         {/* Default route */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Home />} />
 
         {/* Unauthorized access */}
         <Route path="/unauthorized" element={

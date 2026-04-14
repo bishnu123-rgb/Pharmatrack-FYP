@@ -9,9 +9,11 @@ const AIChatbot = ({ role = "customer" }) => {
     const storageKey = `pharmatrack_chat_${role}`;
     const historyKey = `pharmatrack_history_${role}`;
 
+    const isOperational = ["admin", "pharmacist", "staff"].includes(role);
+
     const defaultGreeting = [{
         id: "start",
-        text: role === "admin"
+        text: isOperational
             ? "System is online. I am your PharmaTrack Operational Assistant. How can I help you manage the pharmacy today?"
             : "Hello! I'm your PharmaTrack Specialist. I'm here to provide professional guidance on your health and medications. How are you feeling today?",
         sender: "ai"
@@ -130,10 +132,10 @@ const AIChatbot = ({ role = "customer" }) => {
                 <button
                     onClick={toggleChat}
                     className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-all group relative border-4 border-white/20 
-                        ${role === 'admin' ? 'bg-slate-900 text-indigo-400' : 'bg-emerald-600 text-white'}`}
+                        ${isOperational ? 'bg-slate-900 text-indigo-400' : 'bg-emerald-600 text-white'}`}
                 >
                     <MessageCircle size={28} />
-                    <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-white animate-bounce-slow ${role === 'admin' ? 'bg-indigo-500' : 'bg-rose-500'}`}></div>
+                    <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-white animate-bounce-slow ${isOperational ? 'bg-indigo-500' : 'bg-rose-500'}`}></div>
                 </button>
             )}
 
@@ -214,7 +216,7 @@ const AIChatbot = ({ role = "customer" }) => {
                     )}
 
                     {/* Header */}
-                    <div className={`p-6 flex items-center justify-between text-white shrink-0 shadow-lg ${role === 'admin' ? 'bg-slate-900' : 'bg-gradient-to-r from-emerald-600 to-teal-700'}`}>
+                    <div className={`p-6 flex items-center justify-between text-white shrink-0 shadow-lg ${isOperational ? 'bg-slate-900' : 'bg-gradient-to-r from-emerald-600 to-teal-700'}`}>
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsSidebarOpen(true)}
@@ -225,7 +227,7 @@ const AIChatbot = ({ role = "customer" }) => {
                             </button>
                             <div>
                                 <h3 className="font-black text-sm tracking-tight leading-tight">
-                                    {role === 'admin' ? "Operator Assistant" : "Pro Pharmacist AI"}
+                                    {isOperational ? "Operator Assistant" : "Pro Pharmacist AI"}
                                 </h3>
                                 <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Intelligent Node
@@ -243,7 +245,7 @@ const AIChatbot = ({ role = "customer" }) => {
                             <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-in fade-in duration-300`}>
                                 <div className={`max-w-[85%] space-y-2`}>
                                     <div className={`p-4 rounded-2xl text-[13px] font-bold leading-relaxed shadow-sm ${msg.sender === "user"
-                                        ? (role === 'admin' ? "bg-slate-800 text-white" : "bg-emerald-600 text-white") + " rounded-tr-none"
+                                        ? (isOperational ? "bg-slate-800 text-white" : "bg-emerald-600 text-white") + " rounded-tr-none"
                                         : "bg-white text-slate-700 rounded-tl-none border border-slate-100"
                                         }`}>
                                         {msg.text}
@@ -276,7 +278,7 @@ const AIChatbot = ({ role = "customer" }) => {
                         {isTyping && (
                             <div className="flex justify-start animate-in fade-in duration-300">
                                 <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
-                                    <Loader2 size={16} className={`${role === 'admin' ? 'text-indigo-500' : 'text-emerald-500'} animate-spin`} />
+                                    <Loader2 size={16} className={`${isOperational ? 'text-indigo-500' : 'text-emerald-500'} animate-spin`} />
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Node...</span>
                                 </div>
                             </div>
@@ -296,7 +298,7 @@ const AIChatbot = ({ role = "customer" }) => {
                                 type="submit"
                                 disabled={!inputValue.trim() || isTyping}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg transition-all active:scale-95
-                                    ${role === 'admin' ? 'bg-slate-900' : 'bg-emerald-600'}`}
+                                    ${isOperational ? 'bg-slate-900' : 'bg-emerald-600'}`}
                             >
                                 <Send size={20} />
                             </button>

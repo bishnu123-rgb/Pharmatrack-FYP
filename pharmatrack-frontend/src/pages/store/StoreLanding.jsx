@@ -281,8 +281,9 @@ const SmartHealthConsultant = ({ medicines, setActiveSection }) => {
     };
 
     return (
-        <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50"></div>
+        <div className="bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-white/40 p-10 shadow-2xl shadow-emerald-500/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 rounded-full -mr-48 -mt-48 blur-[80px] group-hover:bg-emerald-400/20 transition-all duration-1000"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/5 rounded-full -ml-32 -mb-32 blur-[60px]"></div>
 
             <div className="max-w-3xl mx-auto mb-12 text-center relative z-10">
                 <span className="inline-flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-4 py-1.5 rounded-full mb-4 border border-emerald-100">
@@ -431,8 +432,9 @@ const MedicineInteractionChecker = ({ medicines }) => {
     };
 
     return (
-        <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden border border-slate-800 mt-12">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
+        <div className="bg-slate-950 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden border border-slate-800/50 mt-12 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full -mr-64 -mt-64 blur-[100px] group-hover:bg-emerald-500/15 transition-all duration-1000"></div>
             <div className="max-w-3xl mx-auto mb-10 text-center relative z-10">
                 <span className="inline-flex items-center gap-2 text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-4 py-1.5 rounded-full mb-4 border border-emerald-500/20">
                     <ShieldAlert size={12} /> Global Pro-Safety Module
@@ -591,7 +593,28 @@ const BrowseSection = ({ medicines, categories, loading }) => {
                     <button onClick={() => setActiveCategory("all")} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider shrink-0 transition-all ${activeCategory === "all" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20" : "bg-white text-slate-500 border border-slate-100 hover:border-emerald-200"}`}>All</button>
                     {categories.map(cat => (<button key={cat.category_id} onClick={() => setActiveCategory(String(cat.category_id))} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider shrink-0 transition-all ${String(activeCategory) === String(cat.category_id) ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20" : "bg-white text-slate-500 border border-slate-100 hover:border-emerald-200"}`}>{cat.category_name}</button>))}
                 </div>
-                {loading ? <div className="grid grid-cols-1 md:grid-cols-4 gap-6">{Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}</div> : <div className="grid grid-cols-1 md:grid-cols-4 gap-6">{filtered.map(med => <MedicineCard key={med.medicine_id} med={med} />)}</div>}
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+                    </div>
+                ) : filtered.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        {filtered.map(med => <MedicineCard key={med.medicine_id} med={med} />)}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in-95 duration-500">
+                        <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center text-slate-300 mb-6 border border-slate-100">
+                            <SearchCode size={40} />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 mb-2">No Medicines Found</h3>
+                        <p className="text-sm font-bold text-slate-500 max-w-xs mx-auto">
+                            We couldn't find anything matching your search. Try different keywords or check our whole catalogue.
+                        </p>
+                        <button onClick={() => { setLocalSearch(""); setActiveCategory("all"); }} className="mt-6 text-emerald-600 font-black text-xs uppercase tracking-widest hover:text-emerald-500 transition-colors">
+                            Clear All Filters
+                        </button>
+                    </div>
+                )}
                 {!loading && <RecentlyViewed allMedicines={medicines} />}
             </div>
         </div>
@@ -614,6 +637,8 @@ const StoreLanding = () => {
     const [activeSection, setActiveSection] = useState("browse");
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+        document.title = "PharmaTrack | Modern Pharmacy Marketplace";
         Promise.all([getStoreMedicines(), getStoreCategories()])
             .then(([meds, cats]) => { setMedicines(meds); setCategories(cats); })
             .catch(console.error)
@@ -622,7 +647,7 @@ const StoreLanding = () => {
 
     return (
         <StoreLayout>
-            <div className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-[72px] z-[40]">
+            <div className="bg-white/90 backdrop-blur-md border-b border-slate-100 sticky top-[72px] z-[40]">
                 <div className="max-w-7xl mx-auto px-6"><div className="flex gap-1 overflow-x-auto scrollbar-hide">
                     {SECTIONS.map(sec => (
                         <button
@@ -631,7 +656,7 @@ const StoreLanding = () => {
                                 setActiveSection(sec.id);
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 flex items-center gap-3 shrink-0 ${activeSection === sec.id ? "border-emerald-600 text-emerald-800 bg-emerald-50/30" : "border-transparent text-slate-400 hover:text-slate-600"}`}
+                            className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 flex items-center gap-3 shrink-0 ${activeSection === sec.id ? "border-emerald-600 text-emerald-800 bg-emerald-50/50" : "border-transparent text-slate-400 hover:text-slate-600"}`}
                         >
                             <sec.icon size={16} strokeWidth={activeSection === sec.id ? 2.5 : 2} />
                             {sec.label}

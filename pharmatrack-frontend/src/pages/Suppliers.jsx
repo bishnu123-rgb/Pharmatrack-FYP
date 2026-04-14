@@ -35,6 +35,7 @@ const Suppliers = () => {
     const [toggling, setToggling] = useState(null);
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const canEdit = ["admin", "pharmacist"].includes(user.role);
+    const canPurchase = ["admin", "pharmacist"].includes(user?.role);
 
     // Removed legacy local notify in favor of react-hot-toast
 
@@ -298,7 +299,7 @@ const Suppliers = () => {
                                     </button>
                                 </>
                             )}
-                            {sup.is_active && (
+                            {sup.is_active && canPurchase && (
                                 <button
                                     onClick={() => navigate('/purchases', { state: { prefilledSupplierId: sup.supplier_id } })}
                                     className="w-12 h-12 bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 rounded-2xl flex items-center justify-center transition-all"

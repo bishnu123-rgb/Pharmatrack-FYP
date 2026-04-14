@@ -118,12 +118,14 @@ const MedicineDetail = () => {
     };
 
     useEffect(() => {
+        window.scrollTo(0, 0); // Ensure page starts at the top
         setLoading(true);
         setRxAcknowledged(false);
         setShowRxGate(false);
         getStoreMedicineDetail(id)
             .then(data => {
                 setMedicine(data);
+                document.title = `PharmaTrack | ${data.name}`;
                 // Show prescription gate if required and not yet acknowledged
                 if (data.requires_prescription) {
                     setShowRxGate(true);

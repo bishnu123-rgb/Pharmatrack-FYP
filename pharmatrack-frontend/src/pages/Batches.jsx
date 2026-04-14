@@ -113,7 +113,7 @@ const Batches = () => {
         window.addEventListener("keydown", handleEsc);
 
         // Auto-open modal if prefilled from Medicines page
-        if (location.state?.prefilledMedicineId) {
+        if (location.state?.prefilledMedicineId && canEdit) {
             setFormData(prev => ({ ...prev, medicine_id: String(location.state.prefilledMedicineId) }));
             setModalOpen(true);
             setEditId(null);

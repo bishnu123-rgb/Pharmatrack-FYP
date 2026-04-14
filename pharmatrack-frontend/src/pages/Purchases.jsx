@@ -50,7 +50,10 @@ const Purchases = () => {
         return () => document.head.removeChild(styleTag);
     }, []);
 
-    const [activeView, setActiveView] = useState("new");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const canPurchase = ["admin", "pharmacist"].includes(user?.role);
+
+    const [activeView, setActiveView] = useState(canPurchase ? "new" : "history");
     const [purchaseMode, setPurchaseMode] = useState("restock");
     const [mobileTab, setMobileTab] = useState("selector");
 
@@ -300,10 +303,12 @@ const Purchases = () => {
                                 <h1 className="text-4xl font-black text-slate-900 tracking-tight">Procurement</h1>
                                 <p className="text-slate-500 font-bold">Record incoming stock deliveries.</p>
                             </div>
-                            <div className="flex bg-slate-100 p-1 rounded-2xl">
-                                <button onClick={() => setActiveView("new")} className={`px-6 py-2.5 rounded-xl text-[11px] font-black transition-all ${activeView === "new" ? "bg-white shadow text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>NEW PURCHASE</button>
-                                <button onClick={() => setActiveView("history")} className={`px-6 py-2.5 rounded-xl text-[11px] font-black transition-all ${activeView === "history" ? "bg-white shadow text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>HISTORY</button>
-                            </div>
+                            {canPurchase && (
+                                <div className="flex bg-slate-100 p-1 rounded-2xl">
+                                    <button onClick={() => setActiveView("new")} className={`px-6 py-2.5 rounded-xl text-[11px] font-black transition-all ${activeView === "new" ? "bg-white shadow text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>NEW PURCHASE</button>
+                                    <button onClick={() => setActiveView("history")} className={`px-6 py-2.5 rounded-xl text-[11px] font-black transition-all ${activeView === "history" ? "bg-white shadow text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>HISTORY</button>
+                                </div>
+                            )}
                         </div>
 
                         {activeView === "new" ? (
@@ -425,9 +430,11 @@ const Purchases = () => {
                                                 <h2 className="text-4xl font-black">NPR {total.toLocaleString()}</h2>
                                             </div>
                                             {error && <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold uppercase">{error}</div>}
-                                            <button onClick={handlePurchase} disabled={submitting} className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 font-black text-white transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2">
-                                                {submitting ? <Loader2 className="animate-spin" size={20} /> : <><ShoppingBag size={20} /> Record Purchase</>}
-                                            </button>
+                                            {canPurchase && (
+                                                <button onClick={handlePurchase} disabled={submitting} className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 font-black text-white transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2">
+                                                    {submitting ? <Loader2 className="animate-spin" size={20} /> : <><ShoppingBag size={20} /> Record Purchase</>}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
