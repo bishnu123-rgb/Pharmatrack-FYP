@@ -64,7 +64,6 @@ exports.generateAlerts = async (req, res) => {
 
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("GENERATE ALERTS ERROR:", err);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
@@ -82,7 +81,6 @@ exports.getAlerts = async (req, res) => {
     `);
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error("GET ALERTS ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };

@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-    AlertTriangle, Bell, RefreshCcw, Loader2, Calendar,
+    AlertTriangle, Bell, RefreshCcw, Loader2,
     Package, AlertCircle, TrendingDown, Clock, Search,
-    Filter, ArrowRight, ShoppingCart, Eye, ChevronRight
+    ShoppingCart, Eye, ChevronRight
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { getAlerts, triggerAlertGeneration } from "../services/api";
 
@@ -35,8 +36,9 @@ const Alerts = () => {
         try {
             await triggerAlertGeneration();
             await fetchAlerts();
+            toast.success("System scan complete.");
         } catch (err) {
-            alert("System scan failed. Please try again.");
+            toast.error("System scan failed. Please try again.");
         } finally {
             setRefreshing(false);
         }
