@@ -89,7 +89,6 @@ exports.register = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -149,7 +148,6 @@ exports.verifyEmail = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("VERIFY ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -181,7 +179,6 @@ exports.resendVerificationCode = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("RESEND ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -244,7 +241,6 @@ exports.login = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -321,7 +317,6 @@ exports.requestPasswordReset = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("FORGOT PASSWORD ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -380,7 +375,6 @@ exports.resetPassword = async (req, res) => {
     res.status(200).json({ message: "Password has been reset successfully. You can now login." });
 
   } catch (err) {
-    console.error("RESET PASSWORD ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };

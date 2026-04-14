@@ -17,7 +17,7 @@ async function auth(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Check if account is still active in database
+    // Security Audit: Check if account is still active in database
     const userResult = await pool.query("SELECT status FROM users WHERE user_id = $1", [decoded.user_id]);
 
     if (userResult.rows.length === 0 || userResult.rows[0].status !== 'active') {

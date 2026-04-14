@@ -8,22 +8,16 @@ import {
     Filter, Activity, Lock, Unlock, UserCheck, ChevronDown, Trash2
 } from "lucide-react";
 
-const ToastOverlay = ({ notifications }) => (
-    <div className="fixed bottom-10 right-10 z-[3000] flex flex-col items-end pointer-events-none">
-        {notifications.map(n => (
-            <div key={n.id} className={`flex items-center gap-3 px-6 py-4 rounded-3xl shadow-2xl border animate-in slide-in-from-right-10 duration-500 mb-4 backdrop-blur-xl pointer-events-auto min-w-[320px] ${n.type === "success" ? "bg-slate-900/90 border-slate-700 text-white" : "bg-rose-600 border-rose-500 text-white"
-                }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${n.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-white/20 text-white"}`}>
-                    {n.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-                </div>
-                <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-0.5">{n.type === "success" ? "Network Event" : "System Alert"}</p>
-                    <p className="text-[13px] font-bold tracking-tight">{n.message}</p>
-                </div>
-            </div>
-        ))}
-    </div>
-);
+import toast from "react-hot-toast";
+
+const highlightText = (text, query) => {
+    if (!query || typeof text !== 'string') return text;
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ?
+            <span key={i} className="bg-amber-100 text-amber-900 px-0.5 rounded">{part}</span> : part
+    );
+};
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -33,15 +27,16 @@ const UserManagement = () => {
     const [toggling, setToggling] = useState(null);
     const [activeMenu, setActiveMenu] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
-    const [notifications, setNotifications] = useState([]);
     const menuRef = useRef(null);
 
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
     const notify = (message, type = "success") => {
-        const id = Date.now();
-        setNotifications(prev => [...prev, { id, message, type }]);
-        setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
+        if (type === "success") {
+            toast.success(message);
+        } else {
+            toast.error(message);
+        }
     };
 
     const roles = [
@@ -61,6 +56,16 @@ const UserManagement = () => {
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // Global Scroll Lock for Modals
+    useEffect(() => {
+        if (activeMenu || deleteConfirm) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto";
+        }
+        return () => { document.body.style.overflow = "auto"; };
+    }, [activeMenu, deleteConfirm]);
 
     const loadUsers = async () => {
         try {
@@ -168,7 +173,7 @@ const UserManagement = () => {
             {/* Global Action Modal (Change Role & Delete) */}
             {activeUser && (
                 <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setActiveMenu(null)}></div>
+                    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl" onClick={() => setActiveMenu(null)}></div>
                     <div className="relative w-full max-w-[280px] bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-6 z-[5001] animate-in fade-in zoom-in-95 duration-200 text-left">
                         <div className="space-y-5">
                             <div className="space-y-2.5">
@@ -217,7 +222,7 @@ const UserManagement = () => {
 
             {/* Custom Delete Confirmation Dialog */}
             {deleteConfirm && (
-                <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300">
                     <div className="w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-8 text-center animate-in zoom-in-95 duration-300 border border-slate-100 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-2 bg-rose-500"></div>
 
@@ -326,8 +331,8 @@ const UserManagement = () => {
                                                     {u.username[0].toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm sm:text-base font-black text-slate-900 line-clamp-1">{u.full_name}</p>
-                                                    <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold tracking-tight line-clamp-1">{u.email}</p>
+                                                    <p className="text-sm sm:text-base font-black text-slate-900 line-clamp-1">{highlightText(u.full_name, searchTerm)}</p>
+                                                    <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold tracking-tight line-clamp-1">{highlightText(u.email, searchTerm)}</p>
                                                     <div className="sm:hidden mt-1">
                                                         <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg border ${u.role_name === 'admin' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
                                                             {u.role_name}
@@ -406,8 +411,6 @@ const UserManagement = () => {
                 </div>
             </div>
 
-            {/* Notification Center */}
-            {notifications.length > 0 && <ToastOverlay notifications={notifications} />}
         </>
     );
 };

@@ -9,21 +9,7 @@ import {
     Eye, EyeOff, Save, X, ArrowRight, Activity
 } from "lucide-react";
 
-const ToastOverlay = ({ notifications }) => (
-    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[3000] flex flex-col items-center pointer-events-none">
-        {notifications.map(n => (
-            <div key={n.id} className={`flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl border animate-in slide-in-from-top-12 duration-500 mb-4 backdrop-blur-xl pointer-events-auto min-w-[320px] ${n.type === "success" ? "bg-emerald-600/90 border-emerald-500/50 text-white" : "bg-rose-600 border-rose-500 text-white"
-                }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${n.type === "success" ? "bg-emerald-500/30 text-emerald-100" : "bg-white/20 text-white"}`}>
-                    {n.type === "success" ? <CheckCircle2 size={18} className="animate-bounce" /> : <AlertCircle size={18} />}
-                </div>
-                <div>
-                    <p className="text-[14px] font-black tracking-tight">{n.message}</p>
-                </div>
-            </div>
-        ))}
-    </div>
-);
+import toast from "react-hot-toast";
 
 const Profile = () => {
     const [profile, setProfile] = useState(null);
@@ -31,7 +17,6 @@ const Profile = () => {
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [notifications, setNotifications] = useState([]);
     const [dialog, setDialog] = useState({ show: false, title: "", message: "", type: "error" }); // "success" or "error"
 
     const [formData, setFormData] = useState({ full_name: "", email: "", phone: "" });
@@ -75,9 +60,11 @@ const Profile = () => {
     }, []);
 
     const notify = (message, type = "success") => {
-        const id = Date.now();
-        setNotifications(prev => [...prev, { id, message, type }]);
-        setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
+        if (type === "success") {
+            toast.success(message);
+        } else {
+            toast.error(message);
+        }
     };
 
     const showDialog = (title, message, type = "error") => {
@@ -199,41 +186,14 @@ const Profile = () => {
 
     return (
         <>
-            {/* Elegant Toast Message */}
-            {notifications.length > 0 && <ToastOverlay notifications={notifications} />}
 
             <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 relative">
-                {/* Custom Message Dialog - Center Screen */}
-                {dialog.show && (
-                    <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-                        <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 text-center animate-in zoom-in-95 duration-300 border border-slate-100 relative overflow-hidden">
-                            <div className={`absolute top-0 left-0 w-full h-2 ${dialog.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
-
-                            <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${dialog.type === 'error' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-emerald-50 text-emerald-500 border border-emerald-100'}`}>
-                                {dialog.type === 'error' ? <XCircle size={40} /> : <CheckCircle2 size={40} />}
-                            </div>
-
-                            <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">{dialog.title}</h3>
-                            <p className="text-slate-500 font-bold leading-relaxed mb-8">{dialog.message}</p>
-
-                            <button
-                                onClick={closeDialog}
-                                className={`w-full py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-lg ${dialog.type === 'error' ? 'bg-rose-600 text-white hover:bg-rose-700 shadow-rose-200' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'}`}
-                            >
-                                Got it, thanks
-                            </button>
-                        </div>
-                    </div>
-                )}
 
                 {/* Header Hero Area */}
                 <div className="relative">
                     <div className="h-48 md:h-64 bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/40 via-transparent to-blue-600/40 mix-blend-overlay"></div>
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(79,70,229,0.15),transparent)]"></div>
-
-                        {/* Animated Decal */}
-                        <div className="absolute top-10 right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/30 transition-all duration-1000 animate-pulse"></div>
 
                         {/* Floating elements for mobile flair */}
                         <div className="absolute bottom-4 right-4 w-12 h-12 bg-white/5 rounded-full blur-xl animate-bounce-subtle"></div>
@@ -333,20 +293,22 @@ const Profile = () => {
                                             required
                                         />
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                                    <div className="space-y-1.5 relative">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email <span className="text-[8px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full ml-2">Verified via System</span></label>
                                         <input
                                             type="email"
                                             value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-200 outline-none font-bold text-slate-700 transition-all"
-                                            required
+                                            disabled
+                                            className="w-full px-5 py-3.5 bg-slate-100 border border-slate-200 rounded-xl outline-none font-bold text-slate-400 opacity-60 cursor-not-allowed transition-all"
                                         />
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
                                         <input
-                                            type="text"
+                                            type="tel"
+                                            pattern="[0-9]{10}"
+                                            maxLength={10}
+                                            title="Phone number must be exactly 10 digits"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             placeholder="Enter your phone"
@@ -475,104 +437,122 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {/* Password Modal - Ultra Compact & Responsive */}
-                {showPasswordModal && (
-                    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
-                        <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-6 md:p-8 overflow-hidden animate-in zoom-in-95 duration-300 my-auto">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-500"></div>
-                            <button
-                                onClick={() => setShowPasswordModal(false)}
-                                className="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition p-2"
-                            >
-                                <X size={18} />
-                            </button>
-
-                            <div className="mb-6 text-center">
-                                <h2 className="text-xl font-black text-slate-900 tracking-tight">Security Update</h2>
-                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Update Credentials</p>
-                            </div>
-
-                            <form onSubmit={handlePasswordChange} className="space-y-3">
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Password</label>
-                                    <div className="relative">
-                                        <Key size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
-                                        <input
-                                            type={showPass.current ? "text" : "password"}
-                                            value={passData.currentPassword}
-                                            onChange={(e) => setPassData({ ...passData, currentPassword: e.target.value })}
-                                            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-200 outline-none font-bold text-sm text-slate-700 transition-all"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPass({ ...showPass, current: !showPass.current })}
-                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-500 transition"
-                                        >
-                                            {showPass.current ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
-                                    <div className="relative">
-                                        <Shield size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
-                                        <input
-                                            type={showPass.new ? "text" : "password"}
-                                            value={passData.newPassword}
-                                            onChange={(e) => setPassData({ ...passData, newPassword: e.target.value })}
-                                            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-200 outline-none font-bold text-sm text-slate-700 transition-all"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPass({ ...showPass, new: !showPass.new })}
-                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-500 transition"
-                                        >
-                                            {showPass.new ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
-                                    <div className="relative">
-                                        <CheckCircle2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
-                                        <input
-                                            type={showPass.confirm ? "text" : "password"}
-                                            value={passData.confirmPassword}
-                                            onChange={(e) => setPassData({ ...passData, confirmPassword: e.target.value })}
-                                            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-200 outline-none font-bold text-sm text-slate-700 transition-all"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPass({ ...showPass, confirm: !showPass.confirm })}
-                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-500 transition"
-                                        >
-                                            {showPass.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="w-full bg-slate-900 text-white py-3 rounded-lg font-black text-sm shadow-xl hover:bg-black transition-all active:scale-95 mt-2 flex items-center justify-center gap-2 group"
-                                >
-                                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                                    Update Credentials
-                                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                )}
             </div>
 
-            {/* Elegant Toast Message (Outside Transform Context) */}
-            {notifications.length > 0 && <ToastOverlay notifications={notifications} />}
+            {/* Custom Message Dialog - Outside Transform Context */}
+            {dialog.show && (
+                <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 text-center animate-in zoom-in-95 duration-300 border border-slate-100 relative overflow-hidden">
+                        <div className={`absolute top-0 left-0 w-full h-2 ${dialog.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+                        <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${dialog.type === 'error' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-emerald-50 text-emerald-500 border border-emerald-100'}`}>
+                            {dialog.type === 'error' ? <XCircle size={40} /> : <CheckCircle2 size={40} />}
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">{dialog.title}</h3>
+                        <p className="text-slate-500 font-bold leading-relaxed mb-8">{dialog.message}</p>
+                        <button
+                            onClick={closeDialog}
+                            className={`w-full py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-lg ${dialog.type === 'error' ? 'bg-rose-600 text-white hover:bg-rose-700 shadow-rose-200' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'}`}
+                        >
+                            Got it, thanks
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Password Modal - Outside Transform Context */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-6 md:p-8 overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-500"></div>
+                        <button
+                            onClick={() => setShowPasswordModal(false)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition p-2"
+                        >
+                            <X size={18} />
+                        </button>
+
+                        <div className="mb-6 text-center">
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Security Update</h2>
+                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Update Credentials</p>
+                        </div>
+
+                        <form onSubmit={handlePasswordChange} className="space-y-3">
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Password</label>
+                                <div className="relative">
+                                    <Key size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input
+                                        type={showPass.current ? "text" : "password"}
+                                        value={passData.currentPassword}
+                                        onChange={(e) => setPassData({ ...passData, currentPassword: e.target.value })}
+                                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-200 outline-none font-bold text-sm text-slate-700 transition-all"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPass({ ...showPass, current: !showPass.current })}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-500 transition"
+                                    >
+                                        {showPass.current ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                                <div className="relative">
+                                    <Shield size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input
+                                        type={showPass.new ? "text" : "password"}
+                                        value={passData.newPassword}
+                                        onChange={(e) => setPassData({ ...passData, newPassword: e.target.value })}
+                                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-200 outline-none font-bold text-sm text-slate-700 transition-all"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPass({ ...showPass, new: !showPass.new })}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-500 transition"
+                                    >
+                                        {showPass.new ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                                <div className="relative">
+                                    <CheckCircle2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input
+                                        type={showPass.confirm ? "text" : "password"}
+                                        value={passData.confirmPassword}
+                                        onChange={(e) => setPassData({ ...passData, confirmPassword: e.target.value })}
+                                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-200 outline-none font-bold text-sm text-slate-700 transition-all"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPass({ ...showPass, confirm: !showPass.confirm })}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-500 transition"
+                                    >
+                                        {showPass.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="w-full bg-slate-900 text-white py-3 rounded-lg font-black text-sm shadow-xl hover:bg-black transition-all active:scale-95 mt-2 flex items-center justify-center gap-2 group"
+                            >
+                                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                Update Credentials
+                                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

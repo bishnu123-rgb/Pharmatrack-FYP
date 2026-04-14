@@ -94,16 +94,12 @@ exports.changePassword = async (req, res) => {
             [req.user.user_id]
         );
 
-        console.log(`Checking new password against ${historyResult.rows.length} previous hashes...`);
         for (const record of historyResult.rows) {
             const isOldMatch = await bcrypt.compare(newPassword, record.password_hash);
             if (isOldMatch) {
-                console.log("CRITICAL: Password reuse detected in history!");
                 return res.status(400).json({ error: "You have used this password recently. For security, please choose a different one." });
             }
         }
-
-        console.log("No security violations found. Proceeding with credential rotation.");
 
         // 4. Update password
         const salt = await bcrypt.genSalt(10);
