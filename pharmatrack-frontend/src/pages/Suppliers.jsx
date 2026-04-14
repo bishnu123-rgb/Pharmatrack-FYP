@@ -2,13 +2,24 @@ import { useState, useEffect, useMemo } from "react";
 import {
     Plus, Edit, Trash2, X, Truck, Loader2, AlertCircle,
     Phone, Mail, MapPin, TrendingUp, ShoppingCart,
-    Activity, Power, Search, Filter, History, ChevronRight, CheckCircle2
+    Activity, Power, Search, Filter, History, ChevronRight, CheckCircle2,
+    CheckCircle
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
     getSuppliers, createSupplier, updateSupplier,
     toggleSupplierStatus
 } from "../services/api";
+
+const highlightText = (text, query) => {
+    if (!query) return text;
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ?
+            <span key={i} className="bg-amber-100 text-amber-900 px-0.5 rounded">{part}</span> : part
+    );
+};
 
 const Suppliers = () => {
     const navigate = useNavigate();
@@ -22,16 +33,10 @@ const Suppliers = () => {
     const [statusFilter, setStatusFilter] = useState("all");
     const [error, setError] = useState("");
     const [toggling, setToggling] = useState(null);
-    const [notifications, setNotifications] = useState([]);
-
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const canEdit = ["admin", "pharmacist"].includes(user.role);
 
-    const notify = (message, type = "success") => {
-        const id = Date.now();
-        setNotifications(prev => [...prev, { id, message, type }]);
-        setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
-    };
+    // Removed legacy local notify in favor of react-hot-toast
 
     const fetchData = async () => {
         try {
@@ -46,6 +51,23 @@ const Suppliers = () => {
 
     useEffect(() => {
         fetchData();
+    }, []);
+
+    // Global Scroll Lock for Modals
+    useEffect(() => {
+        if (modalOpen || toggling) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto";
+        }
+        return () => { document.body.style.overflow = "auto"; };
+    }, [modalOpen, toggling]);
+
+    // Esc to close modal
+    useEffect(() => {
+        const handleEsc = (e) => { if (e.key === "Escape") setModalOpen(false); };
+        window.addEventListener("keydown", handleEsc);
+        return () => window.removeEventListener("keydown", handleEsc);
     }, []);
 
     const filteredSuppliers = useMemo(() => {
@@ -73,7 +95,7 @@ const Suppliers = () => {
             } else {
                 await createSupplier(formData);
             }
-            notify(editId ? "Supplier profile updated!" : "New supplier onboarded successfully!");
+            toast.success(editId ? "Supplier profile updated!" : "New supplier onboarded successfully!");
             setModalOpen(false);
             setFormData({ supplier_name: "", phone: "", email: "", address: "" });
             setEditId(null);
@@ -88,10 +110,10 @@ const Suppliers = () => {
         try {
             await toggleSupplierStatus(id);
             const sup = suppliers.find(s => s.supplier_id === id);
-            notify(sup?.is_active ? "Supplier network access suspended." : "Supplier network access restored!");
+            toast.success(sup?.is_active ? "Supplier network access suspended." : "Supplier network access restored!");
             fetchData();
         } catch (err) {
-            alert("Failed to toggle status.");
+            toast.error("Failed to toggle status.");
         } finally {
             setToggling(null);
         }
@@ -227,7 +249,7 @@ const Suppliers = () => {
                                 <Truck size={24} />
                             </div>
                             <div className="min-w-0 pr-16">
-                                <h3 className="text-xl font-black text-slate-900 leading-tight">{sup.supplier_name}</h3>
+                                <h3 className="text-xl font-black text-slate-900 leading-tight">{highlightText(sup.supplier_name, searchTerm)}</h3>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                                     NPR {Number(sup.total_spent || 0).toLocaleString()} Spent
                                 </p>
@@ -298,10 +320,10 @@ const Suppliers = () => {
 
             {/* MODAL - CENTERED IN VIEWPORT */}
             {modalOpen && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 no-print">
                     {/* Backdrop */}
                     <div
-                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+                        className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300"
                         onClick={() => setModalOpen(false)}
                     ></div>
 
@@ -386,28 +408,8 @@ const Suppliers = () => {
                 </div>
             )}
 
-            {/* Notification Center */}
-            {notifications.length > 0 && <ToastOverlay notifications={notifications} />}
         </div>
     );
 };
-
-// Floating Notifications Component (Elite Design)
-const ToastOverlay = ({ notifications }) => (
-    <div className="fixed bottom-10 right-10 z-[3000] flex flex-col items-end pointer-events-none">
-        {notifications.map(n => (
-            <div key={n.id} className={`flex items-center gap-3 px-6 py-4 rounded-3xl shadow-2xl border animate-in slide-in-from-right-10 duration-500 mb-4 backdrop-blur-xl pointer-events-auto min-w-[320px] ${n.type === "success" ? "bg-slate-900/90 border-slate-700 text-white" : "bg-rose-600 border-rose-500 text-white"
-                }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${n.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-white/20 text-white"}`}>
-                    {n.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-                </div>
-                <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-0.5">{n.type === "success" ? "Network Event" : "System Alert"}</p>
-                    <p className="text-[13px] font-bold tracking-tight">{n.message}</p>
-                </div>
-            </div>
-        ))}
-    </div>
-);
 
 export default Suppliers;

@@ -94,8 +94,7 @@ exports.createPurchase = async (req, res) => {
 
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("CREATE PURCHASE ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   } finally {
     client.release();
   }
@@ -122,8 +121,7 @@ exports.getPurchases = async (req, res) => {
     `);
     res.json(result.rows);
   } catch (err) {
-    console.error("GET PURCHASES ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -162,7 +160,6 @@ exports.getPurchaseById = async (req, res) => {
 
     res.json(purchase);
   } catch (err) {
-    console.error("GET PURCHASE DETAILS ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

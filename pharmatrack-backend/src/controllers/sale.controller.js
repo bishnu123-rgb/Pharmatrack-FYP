@@ -102,8 +102,7 @@ exports.getSales = async (req, res) => {
     `);
     res.json(result.rows);
   } catch (err) {
-    console.error("GET SALES ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -137,8 +136,7 @@ exports.getSaleById = async (req, res) => {
       items: itemsResult.rows
     });
   } catch (err) {
-    console.error("GET SALE BY ID ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -165,7 +163,6 @@ exports.getSalesStats = async (req, res) => {
 
     res.json(statsResult.rows[0]);
   } catch (err) {
-    console.error("GET SALES STATS ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
