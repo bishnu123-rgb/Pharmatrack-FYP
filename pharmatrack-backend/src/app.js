@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 
 const authRoutes = require("./routes/auth.routes");
@@ -17,13 +18,6 @@ const storeRoutes = require("./routes/store.routes");
 const aiRoutes = require("./routes/ai.routes");
 const aiService = require("./services/ai.service");
 const app = express();
-
-app.use((req, res, next) => {
-  console.log("➡️", req.method, req.url);
-  next();
-});
-
-const path = require("path");
 
 app.use(cors());
 app.use(express.json());

@@ -49,7 +49,7 @@ const Profile = () => {
                 window.dispatchEvent(new Event("userUpdated"));
             }
         } catch (err) {
-            console.error("Failed to fetch profile", err);
+            // Silently fail or handle UI-side error state
         } finally {
             setLoading(false);
         }

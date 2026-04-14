@@ -80,7 +80,7 @@ exports.register = async (req, res) => {
         await sendVerificationEmail(lowerEmail, verificationCode);
       }
     } catch (mailErr) {
-      console.error("MAIL SEND ERROR:", mailErr);
+      // Log failure but proceed with registration UI state
     }
 
     res.status(200).json({
@@ -114,11 +114,9 @@ exports.verifyEmail = async (req, res) => {
 
     const { username, passwordHash, full_name, role_name, isPending } = pending;
 
-    // Resolve role_id (default to staff if not found)
     const roleResult = await pool.query("SELECT role_id FROM roles WHERE role_name = $1", [role_name]);
     const roleId = roleResult.rows[0]?.role_id || 2;
 
-    // Pharmacists require admin approval before they can log in
     const initialStatus = isPending ? 'pending' : 'active';
 
     const newUser = await pool.query(
@@ -135,7 +133,7 @@ exports.verifyEmail = async (req, res) => {
         await sendWelcomeEmail(lowerEmail, full_name);
       }
     } catch (mailErr) {
-      console.error("WELCOME MAIL ERROR:", mailErr);
+      // Fail silent on welcome mail to avoid blocking user creation
     }
 
     const isPendingApproval = initialStatus === 'pending';
@@ -171,7 +169,7 @@ exports.resendVerificationCode = async (req, res) => {
         await sendVerificationEmail(lowerEmail, newCode);
       }
     } catch (mailErr) {
-      console.error("RESEND MAIL ERROR:", mailErr);
+      // Silent fail
     }
 
     res.status(200).json({
@@ -309,7 +307,7 @@ exports.requestPasswordReset = async (req, res) => {
         await sendPasswordResetEmail(email, resetToken);
       }
     } catch (mailErr) {
-      console.error("RESET MAIL ERROR:", mailErr);
+      // Silent fail
     }
 
     res.status(200).json({

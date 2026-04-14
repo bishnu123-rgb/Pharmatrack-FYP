@@ -81,7 +81,6 @@ exports.getPublicMedicines = async (req, res) => {
 
         res.json(medicines);
     } catch (err) {
-        console.error("STORE ERROR:", err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -150,7 +149,6 @@ exports.getMedicineDetail = async (req, res) => {
             related: relatedResult.rows.map(r => ({ ...r, total_stock: Number(r.total_stock) }))
         });
     } catch (err) {
-        console.error("STORE DETAIL ERROR:", err);
         res.status(500).json({ error: err.message });
     }
 };

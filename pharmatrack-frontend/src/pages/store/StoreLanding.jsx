@@ -273,7 +273,6 @@ const SmartHealthConsultant = ({ medicines, setActiveSection }) => {
             setAiAdvice(reply || "Based on your symptoms, I have analyzed our inventory for the most suitable options.");
             setResults(uniqueResults);
         } catch (error) {
-            console.error("Health Check Error:", error);
             setAiAdvice("Technical node unreachable. Please consult our staff via WhatsApp for urgent advice.");
         } finally {
             setIsSearching(false);
@@ -415,7 +414,6 @@ const MedicineInteractionChecker = ({ medicines }) => {
                 status: data.status
             });
         } catch (err) {
-            console.error("Interaction Check Error:", err);
             toast.error("Analysis service is temporarily unavailable.");
             setReport({ name1, name2, text: "Technical node unreachable. Safe consultation with a pharmacist is recommended.", score: 0, status: "Warning" });
         } finally {
@@ -641,7 +639,7 @@ const StoreLanding = () => {
         document.title = "PharmaTrack | Modern Pharmacy Marketplace";
         Promise.all([getStoreMedicines(), getStoreCategories()])
             .then(([meds, cats]) => { setMedicines(meds); setCategories(cats); })
-            .catch(console.error)
+            .catch(() => { })
             .finally(() => setLoading(false));
     }, []);
 
