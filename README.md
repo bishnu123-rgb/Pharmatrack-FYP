@@ -1,22 +1,37 @@
 # PharmaTrack IMS: Professional Pharmacy & Intelligence System
 
+
 PharmaTrack IMS is a Pharmacy Information Management System designed to bridge the gap between internal inventory logistics and external customer health services. Built with a "Clinical-First" philosophy, it combines robust inventory management with advanced AI-driven healthcare tools.
 
 ## Key Modules
 
 ### Enterprise Control Center (Staff/Pharmacist/Admin)
+=======
+PharmaTrack IMS is a world-class, enterprise-grade Pharmacy Information Management System designed to bridge the gap between internal inventory logistics and external customer health services. Built with a "Clinical-First" philosophy, it combines robust inventory management with advanced AI-driven healthcare tools.
+
+## 🚀 Key Modules
+
+### 🏥 Enterprise Control Center (Staff/Admin)
+
 *   **Intelligent Inventory**: Batch-level tracking with automated shelf/aisle location mapping.
 *   **Dynamic POS & Billing**: High-speed sales recording with real-time stock auto-decrement and digital invoice generation.
 *   **Clinical Safety Alerts**: Real-time monitoring of expiring batches and low-stock thresholds.
 *   **Advanced Analytics**: A premium dashboard providing revenue, profit, and fast-moving medicine insights.
+<<<<<<< HEAD
 *   **Role-Based Access (RBAC)**: Secure multi-tier permissions for Admins, Pharmacists and Staffs.
 
 ### Customer Health Portal (Public)
+=======
+*   **Role-Based Access (RBAC)**: Secure multi-tier permissions for Admins and Pharmacists.
+
+### 🌐 Customer Health Portal (Public)
+>>>>>>> 64db3db (local changes)
 *   **Public store**: Interactive medicine browsing with stock status.
 *   **AI Health Consultant**: Gemini 1.5 Flash integrated symptom-to-medicine advisor.
 *   **Drug Interaction Checker**: AI-powered safety module for multi-drug interaction analysis.
 *   **WhatsApp Integration**: Instant lead generation for out-of-stock medicine requests.
 
+<<<<<<< HEAD
 ## Tech Stack
 *   **Frontend**: React 19, Vite, Tailwind CSS (Modern Glassmorphism UI).
 *   **Backend**: Node.js, Express.
@@ -25,6 +40,16 @@ PharmaTrack IMS is a Pharmacy Information Management System designed to bridge t
 *   **Communication**: GMail SMTP for automated alerts.
 
 ## Installation & Setup
+=======
+## 🛠️ Tech Stack
+*   **Frontend**: React 19, Vite, Tailwind CSS (Modern Glassmorphism UI).
+*   **Backend**: Node.js, Express.
+*   **Database**: PostgreSQL (Industrial-grade schema with Triggers & Indices).
+*   **AI Engine**: Google Gemini 1.5 & Groq Llama 3 Performance Tiers.
+*   **Communication**: GMail SMTP for automated alerts.
+
+## 🔧 Installation & Setup
+>>>>>>> 64db3db (local changes)
 
 ### 1. Prerequisites
 *   Node.js (v18+)
@@ -45,10 +70,19 @@ npm install
 npm run dev
 ```
 
+<<<<<<< HEAD
 ## Project Structure
 *   `pharmatrack-backend/`: API services, clinical logic, and AI integration.
 *   `pharmatrack-frontend/`: High-end UI components and customer portal.
 
 
 ## License
+=======
+## 📂 Project Structure
+*   `pharmatrack-backend/`: API services, clinical logic, and AI integration.
+*   `pharmatrack-frontend/`: High-end UI components and customer portal.
+*   `docs/database/`: Clean SQL scripts for schema migration and optimization.
+
+## ⚖️ License
+>>>>>>> 64db3db (local changes)
 This project is developed for the **Final Year Project (FYP)** submission. All rights reserved.
