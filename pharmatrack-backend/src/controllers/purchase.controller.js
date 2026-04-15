@@ -24,8 +24,8 @@ exports.createPurchase = async (req, res) => {
     await client.query("BEGIN");
 
     const purchaseResult = await client.query(
-      `INSERT INTO purchases (supplier_id, invoice_no, created_by)
-       VALUES ($1, $2, $3)
+      `INSERT INTO purchases (supplier_id, invoice_no, total_amount, created_by)
+       VALUES ($1, $2, 0, $3)
        RETURNING purchase_id`,
       [supplier_id, invoice_no, userId]
     );
@@ -94,6 +94,7 @@ exports.createPurchase = async (req, res) => {
 
   } catch (err) {
     await client.query("ROLLBACK");
+    console.error("Purchase creation error:", err);
     res.status(500).json({ error: "Internal server error" });
   } finally {
     client.release();
