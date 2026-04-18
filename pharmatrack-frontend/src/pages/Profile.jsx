@@ -441,7 +441,7 @@ const Profile = () => {
 
             {/* Custom Message Dialog - Outside Transform Context */}
             {dialog.show && (
-                <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[7000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
                     <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 text-center animate-in zoom-in-95 duration-300 border border-slate-100 relative overflow-hidden">
                         <div className={`absolute top-0 left-0 w-full h-2 ${dialog.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
                         <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${dialog.type === 'error' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-emerald-50 text-emerald-500 border border-emerald-100'}`}>
@@ -465,7 +465,10 @@ const Profile = () => {
                     <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-6 md:p-8 overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-500"></div>
                         <button
-                            onClick={() => setShowPasswordModal(false)}
+                            onClick={() => {
+                                setShowPasswordModal(false);
+                                setPassData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                            }}
                             className="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition p-2"
                         >
                             <X size={18} />

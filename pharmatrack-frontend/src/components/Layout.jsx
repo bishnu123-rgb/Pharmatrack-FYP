@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, NavLink } from "react-router-dom";
 import {
     LayoutDashboard,
@@ -12,10 +12,145 @@ import {
     Users,
     UserCircle,
     Shield,
-    Truck
+    Truck,
+    Bell,
+    CheckCircle2,
+    Clock,
+    ArrowRight
 } from "lucide-react";
 import AIChatbot from "./AIChatbot";
-import { IMAGE_BASE_URL } from "../services/api";
+import { IMAGE_BASE_URL, getDashboardSummary } from "../services/api";
+
+const NotificationBell = () => {
+    const [counts, setCounts] = useState({ alerts: 0, leads: 0 });
+    const [lastSeenCount, setLastSeenCount] = useState(Number(localStorage.getItem("lastSeenNotificationCount") || 0));
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+    const navigate = useNavigate();
+
+    const fetchCounts = async () => {
+        try {
+            const data = await getDashboardSummary();
+            setCounts({
+                alerts: (data.low_stock_items || 0) + (data.expired_batches || 0),
+                leads: data.ready_leads || 0
+            });
+        } catch (err) {
+            console.error("Pulse error:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchCounts();
+        const interval = setInterval(fetchCounts, 60000); // Pulse check every minute
+
+        const handleRefresh = () => fetchCounts();
+        window.addEventListener("refreshNotifications", handleRefresh);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("refreshNotifications", handleRefresh);
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsOpen(false);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const total = counts.alerts + counts.leads;
+    const hasNew = total > lastSeenCount;
+
+    const toggleDropdown = () => {
+        if (!isOpen) {
+            // Marking as seen when opened
+            setLastSeenCount(total);
+            localStorage.setItem("lastSeenNotificationCount", total);
+        }
+        setIsOpen(!isOpen);
+    };
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            <button
+                onClick={toggleDropdown}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 relative group
+                ${total > 0 ? "bg-indigo-50 text-indigo-600 hover:bg-indigo-100" : "bg-slate-50 text-slate-400"}`}
+            >
+                <Bell size={20} className={hasNew ? "animate-swing" : ""} />
+                {total > 0 && hasNew && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-sm ring-2 ring-rose-500/20">
+                        {total - lastSeenCount > 0 ? total - lastSeenCount : "!"}
+                    </span>
+                )}
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-[2rem] shadow-2xl shadow-indigo-500/10 p-2 z-[60] animate-in fade-in slide-in-from-top-4 duration-300 overflow-hidden">
+                    <div className="p-4 border-b border-slate-100">
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Notification</h3>
+                    </div>
+
+                    <div className="p-2 space-y-1">
+                        {counts.alerts > 0 && (
+                            <button
+                                onClick={() => { navigate('/alerts'); setIsOpen(false); }}
+                                className="w-full text-left p-4 rounded-2xl hover:bg-rose-50 group transition-all"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                                        <AlertTriangle size={18} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-slate-900 leading-tight">System Alerts</p>
+                                        <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wide">{counts.alerts} Critical Issues</p>
+                                    </div>
+                                    <ArrowRight size={14} className="ml-auto opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-rose-400" />
+                                </div>
+                            </button>
+                        )}
+
+                        {counts.leads > 0 && (
+                            <button
+                                onClick={() => { navigate('/dashboard'); setIsOpen(false); }}
+                                className="w-full text-left p-4 rounded-2xl hover:bg-indigo-50 group transition-all"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                        <CheckCircle2 size={18} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-slate-900 leading-tight">Restock Leads</p>
+                                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">{counts.leads} Customers Waiting</p>
+                                    </div>
+                                    <ArrowRight size={14} className="ml-auto opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-emerald-400" />
+                                </div>
+                            </button>
+                        )}
+
+                        {total === 0 && (
+                            <div className="py-12 flex flex-col items-center justify-center text-center px-4">
+                                <div className="w-16 h-16 rounded-3xl bg-slate-50 text-slate-300 flex items-center justify-center mb-4">
+                                    <Clock size={32} />
+                                </div>
+                                <p className="text-sm font-bold text-slate-400">System is healthy.<br />No pending notifications.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {total > 0 && (
+                        <div className="p-4 border-top border-slate-100 text-center">
+                            <button onClick={() => { navigate('/dashboard'); setIsOpen(false); }} className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] hover:text-indigo-600 transition-colors">View All Insights</button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const Layout = ({ children }) => {
     const navigate = useNavigate();
@@ -116,6 +251,8 @@ const Layout = ({ children }) => {
                     </div>
 
                     <div className="flex items-center gap-6">
+                        <NotificationBell />
+
                         <div className="flex items-center gap-4 pl-6 border-l border-slate-200">
                             <div className="text-right">
                                 <p className="text-sm font-black text-slate-900 leading-tight">{user.full_name || user.username}</p>

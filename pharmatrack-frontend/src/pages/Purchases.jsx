@@ -254,6 +254,7 @@ const Purchases = () => {
             setInvoiceNo(autoInvoice());
             setSupplierId("");
             loadHistory();
+            window.dispatchEvent(new Event("refreshNotifications"));
         } catch (err) {
             setError(err.message || "Failed to record purchase");
         } finally {
@@ -488,9 +489,7 @@ const Purchases = () => {
                                                             <td className="px-8 py-5">
                                                                 <div className="flex items-center gap-2 text-slate-600">
                                                                     <span className="text-xs font-bold">{new Date(p.purchase_date).toLocaleDateString()}</span>
-                                                                    {new Date(p.purchase_date).getHours() !== 0 && (
-                                                                        <span className="text-[10px] font-black text-slate-400 uppercase">{new Date(p.purchase_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                    )}
+                                                                    <span className="text-[10px] font-black text-slate-400 uppercase">{new Date(p.purchase_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                                 </div>
                                                             </td>
                                                             <td className="px-8 py-5">
@@ -544,7 +543,9 @@ const Purchases = () => {
                                 <div className="text-right space-y-0.5">
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Processed By</p>
                                     <p className="text-sm font-black text-slate-800 leading-tight">{selectedPurchase.created_by || 'Admin'}</p>
-                                    <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest leading-tight">{new Date(selectedPurchase.purchase_date).toLocaleDateString()}</p>
+                                    <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest leading-tight">
+                                        {new Date(selectedPurchase.purchase_date).toLocaleDateString()} {new Date(selectedPurchase.purchase_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
                                 </div>
                             </div>
                             <div className="space-y-3">
@@ -609,7 +610,7 @@ const Purchases = () => {
                             <div className="text-right">
                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Purchase Info</p>
                                 <p className="font-black text-slate-800">REF: {lastPurchaseData.invoice_no}</p>
-                                <p className="font-bold text-slate-500">{lastPurchaseData.date}</p>
+                                <p className="font-bold text-slate-500">{new Date(lastPurchaseData.date || lastPurchaseData.purchase_date).toLocaleString()}</p>
                             </div>
                         </div>
                         <table className="w-full text-xs">

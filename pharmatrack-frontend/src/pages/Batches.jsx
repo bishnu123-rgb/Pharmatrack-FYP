@@ -147,6 +147,7 @@ const Batches = () => {
             setModalOpen(false);
             setEditId(null);
             fetchData();
+            window.dispatchEvent(new Event("refreshNotifications"));
         } catch (err) {
             setFormError(err.message || "Operation failed.");
         }
@@ -173,6 +174,7 @@ const Batches = () => {
             toast.success("Batch archived successfully.");
             setDeleteConfirmId(null);
             fetchData();
+            window.dispatchEvent(new Event("refreshNotifications"));
         } catch (err) {
             toast.error("Failed to archive batch.");
             setDeleteConfirmId(null);

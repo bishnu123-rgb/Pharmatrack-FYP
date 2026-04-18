@@ -14,6 +14,11 @@
     animation-name: slideInBottom;
   }
 
+  .animate-swing {
+    animation: swing 2s infinite ease-in-out;
+    transform-origin: top center;
+  }
+
   .animate-shake {
     animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
   }
@@ -38,6 +43,30 @@
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+@keyframes swing {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  20% {
+    transform: rotate(15deg);
+  }
+
+  40% {
+    transform: rotate(-10deg);
+  }
+
+  60% {
+    transform: rotate(5deg);
+  }
+
+  80% {
+    transform: rotate(-5deg);
   }
 }
 

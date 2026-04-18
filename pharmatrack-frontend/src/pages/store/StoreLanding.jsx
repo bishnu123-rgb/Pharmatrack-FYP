@@ -103,7 +103,20 @@ const AvailabilityBadge = ({ availability }) => {
     return <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${cls}`}>{label}</span>;
 };
 
-const MedicineCard = ({ med }) => {
+const highlightText = (text, highlight) => {
+    if (!highlight.trim()) return text;
+    const regex = new RegExp(`(${highlight})`, "gi");
+    const parts = text.split(regex);
+    return parts.map((part, i) =>
+        regex.test(part) ? (
+            <mark key={i} className="bg-emerald-100 text-emerald-900 rounded-sm px-0.5 font-black decoration-emerald-500/30 underline decoration-2 underline-offset-2">
+                {part}
+            </mark>
+        ) : part
+    );
+};
+
+const MedicineCard = ({ med, searchHighlight = "" }) => {
     const navigate = useNavigate();
     const imgSrc = med.image_url ? `${IMAGE_BASE_URL}${med.image_url}` : null;
     return (
@@ -118,7 +131,9 @@ const MedicineCard = ({ med }) => {
             </div>
             <div className="flex-1 flex flex-col">
                 <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">{med.category_name}</p>
-                <h3 className="text-base font-black text-slate-900 leading-tight mb-1 tracking-tight group-hover:text-emerald-700 transition-colors line-clamp-2">{med.name}</h3>
+                <h3 className="text-base font-black text-slate-900 leading-tight mb-1 tracking-tight group-hover:text-emerald-700 transition-colors line-clamp-2">
+                    {highlightText(med.name, searchHighlight)}
+                </h3>
                 <p className="text-xs font-bold text-slate-400 mb-3">{[med.strength, med.dosage_form].filter(Boolean).join(" · ")}</p>
                 <div className="mt-auto flex items-center justify-between">
                     <AvailabilityBadge availability={med.availability} />
@@ -352,7 +367,7 @@ const SmartHealthConsultant = ({ medicines, setActiveSection }) => {
                     )}
                     {results.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-in fade-in zoom-in-95 duration-700">
-                            {results.map(med => <MedicineCard key={med.medicine_id} med={med} />)}
+                            {results.map(med => <MedicineCard key={med.medicine_id} med={med} searchHighlight={customSymptom} />)}
                         </div>
                     )}
                     {results.length === 0 && (
@@ -597,7 +612,7 @@ const BrowseSection = ({ medicines, categories, loading }) => {
                     </div>
                 ) : filtered.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        {filtered.map(med => <MedicineCard key={med.medicine_id} med={med} />)}
+                        {filtered.map(med => <MedicineCard key={med.medicine_id} med={med} searchHighlight={localSearch} />)}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in-95 duration-500">

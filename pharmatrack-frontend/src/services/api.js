@@ -297,10 +297,9 @@ export const checkDrugInteraction = (drug1, drug2) =>
     body: JSON.stringify({ drug1, drug2 }),
   }).then(r => r.json());
 
-export const getInventoryInsights = (stats) =>
-  fetch(`${API_BASE_URL}/ai/inventory-insights`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stats }),
-  }).then(r => r.json());
+export const getInventoryInsights = (stats) => apiCall("/ai/inventory-insights", {
+  method: "POST",
+  body: JSON.stringify({ stats }),
+});
+
 

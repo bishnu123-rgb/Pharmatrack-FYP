@@ -30,7 +30,7 @@ exports.createSale = async (req, res) => {
       totalAmount += subtotal;
 
       const stock = await client.query(
-        `SELECT i.current_quantity, b.expiry_date, m.is_active
+        `SELECT i.current_quantity, b.expiry_date, m.is_active, m.requires_prescription, m.medicine_name
          FROM inventory i
          JOIN batches b ON i.batch_id = b.batch_id
          JOIN medicines m ON b.medicine_id = m.medicine_id
@@ -42,16 +42,25 @@ exports.createSale = async (req, res) => {
         throw new Error(`Batch ${batch_id} not found in inventory`);
       }
 
-      if (stock.rows[0].is_active === false) {
-        throw new Error(`Medicine in batch ${batch_id} is inactive and cannot be sold`);
+      const med = stock.rows[0];
+
+      if (med.is_active === false) {
+        throw new Error(`Medicine "${med.medicine_name}" is archived and cannot be sold.`);
       }
 
-      if (new Date(stock.rows[0].expiry_date) < new Date()) {
-        throw new Error(`Batch ${batch_id} has expired and cannot be sold`);
+      if (new Date(med.expiry_date) < new Date()) {
+        throw new Error(`Batch ${batch_id} (${med.medicine_name}) has expired.`);
       }
 
-      if (stock.rows[0].current_quantity < quantity) {
-        throw new Error(`Insufficient stock for batch ${batch_id}`);
+      if (med.current_quantity < quantity) {
+        throw new Error(`Insufficient stock for "${med.medicine_name}". Available: ${med.current_quantity}`);
+      }
+
+      // CLINICAL COMPLIANCE: Prescription Enforcement
+      if (med.requires_prescription) {
+        if (!customer_name || customer_name === 'Walking Customer' || !customer_phone) {
+          throw new Error(`Prescription-required drug "${med.medicine_name}" requires mandatory Customer Name and Phone for traceability.`);
+        }
       }
 
       await client.query(
@@ -60,6 +69,7 @@ exports.createSale = async (req, res) => {
          VALUES ($1, $2, $3, $4, $5)`,
         [saleId, batch_id, quantity, unit_price, subtotal]
       );
+
 
       await client.query(
         `UPDATE inventory

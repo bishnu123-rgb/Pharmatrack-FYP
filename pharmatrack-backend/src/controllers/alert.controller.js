@@ -7,10 +7,19 @@ exports.generateAlerts = async (req, res) => {
 
     // 1. Identify valid alerts first
     const lowStockBatches = await client.query(`
-      SELECT i.batch_id FROM inventory i WHERE i.current_quantity <= i.low_stock_threshold
+      SELECT i.batch_id 
+      FROM inventory i 
+      JOIN batches b ON i.batch_id = b.batch_id
+      JOIN medicines m ON b.medicine_id = m.medicine_id
+      WHERE i.current_quantity <= i.low_stock_threshold
+      AND m.is_active = TRUE
     `);
     const expiryBatches = await client.query(`
-      SELECT batch_id FROM batches WHERE expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+      SELECT b.batch_id 
+      FROM batches b 
+      JOIN medicines m ON b.medicine_id = m.medicine_id
+      WHERE b.expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+      AND m.is_active = TRUE
     `);
 
     const validBatchIds = [
@@ -35,7 +44,10 @@ exports.generateAlerts = async (req, res) => {
         'LOW_STOCK',
         'Stock is running low (' || i.current_quantity || ' left)'
       FROM inventory i
+      JOIN batches b ON i.batch_id = b.batch_id
+      JOIN medicines m ON b.medicine_id = m.medicine_id
       WHERE i.current_quantity <= i.low_stock_threshold
+      AND m.is_active = TRUE
       ON CONFLICT (batch_id, alert_type) DO UPDATE 
       SET message = EXCLUDED.message;
     `);
@@ -44,14 +56,16 @@ exports.generateAlerts = async (req, res) => {
     await client.query(`
       INSERT INTO alerts (batch_id, alert_type, message)
       SELECT
-        batch_id,
+        b.batch_id,
         'EXPIRY',
         CASE
-          WHEN expiry_date < CURRENT_DATE THEN 'CRITICAL: This batch has EXPIRED (' || TO_CHAR(expiry_date, 'Mon DD, YYYY') || ')'
-          ELSE 'This batch will expire soon (' || TO_CHAR(expiry_date, 'Mon DD, YYYY') || ')'
+          WHEN b.expiry_date < CURRENT_DATE THEN 'CRITICAL: This batch has EXPIRED (' || TO_CHAR(b.expiry_date, 'Mon DD, YYYY') || ')'
+          ELSE 'This batch will expire soon (' || TO_CHAR(b.expiry_date, 'Mon DD, YYYY') || ')'
         END
-      FROM batches
-      WHERE expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+      FROM batches b
+      JOIN medicines m ON b.medicine_id = m.medicine_id
+      WHERE b.expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+      AND m.is_active = TRUE
       ON CONFLICT (batch_id, alert_type) DO UPDATE
       SET message = EXCLUDED.message;
     `);

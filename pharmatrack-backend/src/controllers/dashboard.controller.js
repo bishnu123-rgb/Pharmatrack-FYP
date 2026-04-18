@@ -19,8 +19,13 @@ exports.getDashboardSummary = async (req, res) => {
     );
 
     const expiredBatches = await pool.query(
-      "SELECT COUNT(*) FROM batches WHERE expiry_date < CURRENT_DATE"
+      `SELECT COUNT(*) FROM batches b
+       JOIN medicines m ON b.medicine_id = m.medicine_id
+       WHERE b.expiry_date < CURRENT_DATE 
+       AND b.is_active = TRUE 
+       AND m.is_active = TRUE`
     );
+
 
     const todaySales = await pool.query(`
       SELECT COALESCE(SUM(total_amount), 0) as total
