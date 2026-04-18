@@ -1,4 +1,3 @@
-@@ -0,0 +1,54 @@
 # PharmaTrack IMS: Professional Pharmacy & Intelligence System
 
 PharmaTrack IMS is a Pharmacy Information Management System designed to bridge the gap between internal inventory logistics and external customer health services. Built with a "Clinical-First" philosophy, it combines robust inventory management with advanced AI-driven healthcare tools.
