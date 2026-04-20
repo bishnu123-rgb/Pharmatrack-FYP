@@ -8,6 +8,7 @@ pharmatrack-frontend/dist/
 .env
 **/.env
 
+# User Uploads (Ignore images, keep folder structure)
 pharmatrack-backend/uploads/*
 !pharmatrack-backend/uploads/.gitkeep
 
@@ -19,5 +20,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Ensure Unit Tests are tracked (required for examiners)
+!**/tests/**/*.js
+
+# General temporary files
 *.sql
 *.txt
