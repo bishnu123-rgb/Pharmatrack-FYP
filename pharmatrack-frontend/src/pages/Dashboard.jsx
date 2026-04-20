@@ -453,41 +453,43 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Smart Strategy Modal */}
-            <div className="fixed top-24 right-8 z-[100] flex flex-col items-end gap-4 animate-in slide-in-from-right-10 duration-700">
-                <button
-                    onClick={handleGetInsight}
-                    className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform hover:scale-110 active:scale-95 group ${showInsight ? 'bg-indigo-600' : 'bg-slate-900 hover:bg-indigo-600'}`}
-                >
-                    <div className="relative">
-                        <BrainCircuit size={28} className={`text-white transition-all duration-500 ${isInsightLoading ? 'animate-pulse' : 'group-hover:rotate-12'}`} />
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-slate-900 animate-ping"></div>
-                    </div>
-                </button>
-
-                {showInsight && (
-                    <div className="max-w-xs bg-slate-900 border border-slate-800 text-white p-6 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-top-5 fade-in duration-500 relative">
-                        <div className="flex items-center gap-2 mb-3 text-indigo-400">
-                            <Sparkles size={14} className="animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Smart Strategy Node</span>
-                            <button onClick={() => setShowInsight(false)} className="ml-auto text-slate-500 hover:text-white transition-colors">
-                                <X size={14} />
-                            </button>
+            {/* Smart Strategy Modal - Management Only */}
+            {['admin', 'pharmacist'].includes(user.role) && (
+                <div className="fixed top-24 right-8 z-[100] flex flex-col items-end gap-4 animate-in slide-in-from-right-10 duration-700">
+                    <button
+                        onClick={handleGetInsight}
+                        className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform hover:scale-110 active:scale-95 group ${showInsight ? 'bg-indigo-600' : 'bg-slate-900 hover:bg-indigo-600'}`}
+                    >
+                        <div className="relative">
+                            <BrainCircuit size={28} className={`text-white transition-all duration-500 ${isInsightLoading ? 'animate-pulse' : 'group-hover:rotate-12'}`} />
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-slate-900 animate-ping"></div>
                         </div>
-                        {isInsightLoading ? (
-                            <div className="flex items-center gap-3 py-2">
-                                <Loader2 size={16} className="animate-spin text-indigo-500" />
-                                <span className="text-xs font-bold text-slate-400">Analyzing System State...</span>
+                    </button>
+
+                    {showInsight && (
+                        <div className="max-w-xs bg-slate-900 border border-slate-800 text-white p-6 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-top-5 fade-in duration-500 relative">
+                            <div className="flex items-center gap-2 mb-3 text-indigo-400">
+                                <Sparkles size={14} className="animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Smart Strategy Node</span>
+                                <button onClick={() => setShowInsight(false)} className="ml-auto text-slate-500 hover:text-white transition-colors">
+                                    <X size={14} />
+                                </button>
                             </div>
-                        ) : (
-                            <p className="text-sm font-bold leading-relaxed text-indigo-50 italic">
-                                "{aiInsight}"
-                            </p>
-                        )}
-                        <div className="absolute -top-2 right-8 w-4 h-4 bg-slate-900 rotate-45 border-t border-l border-slate-800"></div>
-                    </div>
-                )}
-            </div>
+                            {isInsightLoading ? (
+                                <div className="flex items-center gap-3 py-2">
+                                    <Loader2 size={16} className="animate-spin text-indigo-500" />
+                                    <span className="text-xs font-bold text-slate-400">Analyzing System State...</span>
+                                </div>
+                            ) : (
+                                <p className="text-sm font-bold leading-relaxed text-indigo-50 italic">
+                                    "{aiInsight}"
+                                </p>
+                            )}
+                            <div className="absolute -top-2 right-8 w-4 h-4 bg-slate-900 rotate-45 border-t border-l border-slate-800"></div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

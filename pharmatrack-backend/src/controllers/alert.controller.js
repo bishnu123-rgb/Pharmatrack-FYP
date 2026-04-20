@@ -49,7 +49,7 @@ exports.generateAlerts = async (req, res) => {
       WHERE i.current_quantity <= i.low_stock_threshold
       AND m.is_active = TRUE
       ON CONFLICT (batch_id, alert_type) DO UPDATE 
-      SET message = EXCLUDED.message;
+      SET message = EXCLUDED.message, is_read = FALSE;
     `);
 
     // 4. Insert/Update Expiry alerts
@@ -94,6 +94,15 @@ exports.getAlerts = async (req, res) => {
       ORDER BY a.created_at DESC
     `);
     res.status(200).json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.markAsRead = async (req, res) => {
+  try {
+    await pool.query("UPDATE alerts SET is_read = TRUE WHERE is_read = FALSE");
+    res.status(200).json({ message: "All alerts marked as read" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

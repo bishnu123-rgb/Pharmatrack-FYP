@@ -51,6 +51,8 @@ const Sales = () => {
     const [selectedSale, setSelectedSale] = useState(null);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [historySearchTerm, setHistorySearchTerm] = useState("");
+    const [isSafetyScanning, setIsSafetyScanning] = useState(false);
+    const [safetyReport, setSafetyReport] = useState(null);
 
     // Auto-Print Invoice Logic
     useEffect(() => {
@@ -250,6 +252,25 @@ const Sales = () => {
             setError("Failed to load transaction details");
         } finally {
             setIsDetailLoading(false);
+        }
+    };
+
+    const handleSafetyScan = async () => {
+        if (cart.length < 2) {
+            setError("Add at least 2 medicines to perform an interaction scan.");
+            return;
+        }
+        setIsSafetyScanning(true);
+        setSafetyReport(null);
+        try {
+            const drugList = cart.map(i => i.medicine_name).join(", ");
+            // Use the AI chat endpoint to audit the entire cart
+            const res = await sendMessageToAI(`Perform a clinical safety audit for this cart: ${drugList}. Are there any drug-drug interactions?`, "pharmacist");
+            setSafetyReport(res.text);
+        } catch (err) {
+            setError("Safety engine timeout. Perform manual clinical verification.");
+        } finally {
+            setIsSafetyScanning(false);
         }
     };
 
@@ -481,6 +502,33 @@ const Sales = () => {
                                                 <X size={12} /> Reset
                                             </button>
                                         </div>
+
+                                        {/* Safety Scanner Logic */}
+                                        {cart.length >= 2 && (
+                                            <div className="px-8 pb-4 relative z-10">
+                                                <button
+                                                    onClick={handleSafetyScan}
+                                                    disabled={isSafetyScanning}
+                                                    className={`w-full py-3 rounded-2xl border flex items-center justify-center gap-3 transition-all duration-500 ${safetyReport ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-white/5 border-white/10 text-indigo-400 hover:bg-white/10'}`}
+                                                >
+                                                    {isSafetyScanning ? (
+                                                        <Loader2 className="animate-spin" size={16} />
+                                                    ) : (
+                                                        <ShieldAlert size={16} />
+                                                    )}
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">
+                                                        {isSafetyScanning ? "Clinical Safety Scan in Progress..." : safetyReport ? "Safety Audit Complete" : "Perform Clinical Safety Scan"}
+                                                    </span>
+                                                </button>
+                                                {safetyReport && (
+                                                    <div className="mt-3 p-4 bg-slate-950/80 rounded-2xl border border-amber-500/20 text-[10px] font-bold text-amber-200/80 leading-relaxed animate-in fade-in slide-in-from-top-2">
+                                                        <Sparkles size={12} className="inline mr-2 text-amber-400" />
+                                                        {safetyReport}
+                                                        <button onClick={() => setSafetyReport(null)} className="block mt-2 text-slate-500 hover:text-white transition-colors uppercase tracking-widest text-[8px]">Dismiss Report</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         {/* Customer Metadata Entry */}
                                         <div className="px-8 pt-6 space-y-4 relative z-10">

@@ -68,6 +68,7 @@ exports.getBatches = async (req, res) => {
     const result = await pool.query(`
       SELECT b.*, m.medicine_name, m.image_url, i.current_quantity, 
              m.requires_prescription, m.dosage_form, m.strength, m.category_id,
+             m.is_active AS medicine_active,
              COALESCE(c.category_name, 'General') as category_name
       FROM batches b
       JOIN medicines m ON b.medicine_id = m.medicine_id

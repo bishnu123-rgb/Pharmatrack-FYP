@@ -234,6 +234,9 @@ export const getAlerts = () => apiCall("/alerts");
 export const triggerAlertGeneration = () => apiCall("/alerts/generate", {
   method: "POST",
 });
+export const markAlertsAsRead = () => apiCall("/alerts/mark-read", {
+  method: "PUT",
+});
 
 // --- SUPPLIERS ---
 export const getSuppliers = () => apiCall("/suppliers");

@@ -52,7 +52,7 @@ class AIService {
             this.adminClassifier.train();
 
             if (this.genAI && this.apiKey) {
-                // Triple-Check Loop for Initialization
+                // Test model availability before committing
                 const modelsToTest = ["gemini-2.0-flash-lite", "gemini-2.0-flash"];
                 let confirmedModel = null;
 
@@ -99,7 +99,7 @@ class AIService {
         }
     }
 
-    // Local Fallback Logic (Previously implemented Super-Fuzzy)
+    // Fuzzy match using Porter Stemmer and Levenshtein Distance when confidence is low
     findBestLocalMatch(message, knowledge) {
         const normalized = message.replace(/[^\w\s]/gi, ' ').toLowerCase().trim();
         const tokens = this.tokenizer.tokenize(normalized);
@@ -226,7 +226,7 @@ RULES:
             }
         }
 
-        // ─── FALLBACK 3: LOCAL NLP ENGINE ────────────────────────────────────────
+        // Fallback 3: Local NLP engine using Bayes classifier and fuzzy match
         const classifier = role === 'admin' ? this.adminClassifier : this.customerClassifier;
         const knowledge = role === 'admin' ? this.adminKnowledge : this.medicalKnowledge;
 

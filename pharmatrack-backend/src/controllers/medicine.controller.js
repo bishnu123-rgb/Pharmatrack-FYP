@@ -148,3 +148,23 @@ exports.deleteMedicine = async (req, res) => {
     res.status(500).json({ message: "Failed to archive medicine." });
   }
 };
+
+
+exports.getInventoryInsights = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        m.medicine_name,
+        COALESCE(SUM(i.current_quantity), 0) as total_stock,
+        PERCENT_RANK() OVER (ORDER BY SUM(i.current_quantity) DESC) as stock_percentile
+      FROM medicines m
+      LEFT JOIN batches b ON m.medicine_id = b.medicine_id
+      LEFT JOIN inventory i ON b.batch_id = i.batch_id
+      WHERE m.is_active = TRUE
+      GROUP BY m.medicine_id, m.medicine_name
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Analytical query failed" });
+  }
+};

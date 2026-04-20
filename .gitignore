@@ -1,25 +1,28 @@
-# Project Dependencies
-**/node_modules/
-**/uploads/
+# Dependencies
+node_modules/
 
-# Production Build Artifacts
-**/dist/
-**/dist-ssr/
+# Production Build (Frontend)
+pharmatrack-frontend/dist/
 
-# Environment Secrets
+# Environment variables
+.env
 **/.env
-**/.env.local
 
-# Vite Caching
-**/.vite/
+# User Uploads (Ignore images, keep folder structure)
+pharmatrack-backend/uploads/*
+!pharmatrack-backend/uploads/.gitkeep
 
 # Logs
 *.log
 npm-debug.log*
 
-# OS & IDE Junk
+# OS specific files
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
 
+# Ensure Unit Tests are tracked (required for examiners)
+!**/tests/**/*.js
+
+# General temporary files
+*.sql
+*.txt

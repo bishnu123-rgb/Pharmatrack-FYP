@@ -26,6 +26,11 @@ exports.getDashboardSummary = async (req, res) => {
        AND m.is_active = TRUE`
     );
 
+    // Notification-specific metrics (Unread count)
+    const unreadAlertsCount = await pool.query(
+      "SELECT COUNT(*) FROM alerts WHERE is_read = FALSE"
+    );
+
 
     const todaySales = await pool.query(`
       SELECT COALESCE(SUM(total_amount), 0) as total
@@ -139,6 +144,7 @@ exports.getDashboardSummary = async (req, res) => {
       total_medicines: Number(totalMedicines.rows[0].count),
       low_stock_items: Number(lowStock.rows[0].count),
       expired_batches: Number(expiredBatches.rows[0].count),
+      unread_alerts: Number(unreadAlertsCount.rows[0].count),
       today_sales: Number(todaySales.rows[0].total),
       today_profit: today_profit,
       stock_requests: Number(stockRequests.rows[0].count),

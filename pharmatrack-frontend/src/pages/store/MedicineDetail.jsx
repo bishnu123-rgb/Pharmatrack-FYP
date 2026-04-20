@@ -52,7 +52,7 @@ const PrescriptionGate = ({ medicine, onContinue, onBack }) => (
                     onClick={onContinue}
                     className="w-full py-4 rounded-2xl font-black text-sm bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-200 transition-all active:scale-95"
                 >
-                    I Have a Prescription — Continue
+                    I Have a Prescription - Continue
                 </button>
                 <button
                     onClick={onBack}

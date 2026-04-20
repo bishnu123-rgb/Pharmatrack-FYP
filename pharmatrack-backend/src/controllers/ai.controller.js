@@ -36,9 +36,7 @@ exports.chat = async (req, res) => {
     }
 };
 
-// ─── Dedicated Drug Interaction Checker ─────────────────────────────────────
-// This endpoint does NOT use the chatbot system prompt — it has its own strict
-// medical analysis persona so instructions are never overridden.
+// Drug interaction checker — uses its own clinical system prompt, separate from the chatbot.
 exports.checkInteraction = async (req, res) => {
     try {
         const { drug1, drug2 } = req.body;
@@ -83,7 +81,7 @@ RULES (non-negotiable):
             }
         }
 
-        // ── Fallback 2: GROQ ──────────────────────────────────────────────────
+        // Fallback: Try Groq if Gemini is unavailable
         const groqKey = process.env.GROQ_API_KEY;
         if (groqKey && groqKey !== 'your_groq_key_here') {
             try {
@@ -117,7 +115,7 @@ RULES (non-negotiable):
             }
         }
 
-        // ── Fallback 3: Local known-drug list validation ──────────────────────
+        // Final fallback: validate against local known-drug list
         const KNOWN_DRUGS = new Set([
             "aspirin", "paracetamol", "acetaminophen", "ibuprofen", "naproxen",
             "warfarin", "metformin", "atorvastatin", "simvastatin", "omeprazole",

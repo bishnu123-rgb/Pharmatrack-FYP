@@ -19,7 +19,7 @@ import {
     ArrowRight
 } from "lucide-react";
 import AIChatbot from "./AIChatbot";
-import { IMAGE_BASE_URL, getDashboardSummary } from "../services/api";
+import { IMAGE_BASE_URL, getDashboardSummary, markAlertsAsRead } from "../services/api";
 
 const NotificationBell = () => {
     const [counts, setCounts] = useState({ alerts: 0, leads: 0 });
@@ -32,7 +32,7 @@ const NotificationBell = () => {
         try {
             const data = await getDashboardSummary();
             setCounts({
-                alerts: (data.low_stock_items || 0) + (data.expired_batches || 0),
+                alerts: data.unread_alerts || 0,
                 leads: data.ready_leads || 0
             });
         } catch (err) {
@@ -64,11 +64,15 @@ const NotificationBell = () => {
     const total = counts.alerts + counts.leads;
     const hasNew = total > lastSeenCount;
 
-    const toggleDropdown = () => {
-        if (!isOpen) {
-            // Marking as seen when opened
-            setLastSeenCount(total);
-            localStorage.setItem("lastSeenNotificationCount", total);
+    const toggleDropdown = async () => {
+        if (!isOpen && total > 0) {
+            try {
+                await markAlertsAsRead();
+                // We don't reset count immediately here to avoid UI jump, 
+                // but next pulse check will clear it.
+            } catch (err) {
+                console.error("Mark read error:", err);
+            }
         }
         setIsOpen(!isOpen);
     };
@@ -80,10 +84,10 @@ const NotificationBell = () => {
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 relative group
                 ${total > 0 ? "bg-indigo-50 text-indigo-600 hover:bg-indigo-100" : "bg-slate-50 text-slate-400"}`}
             >
-                <Bell size={20} className={hasNew ? "animate-swing" : ""} />
-                {total > 0 && hasNew && (
+                <Bell size={20} className={total > 0 ? "animate-swing" : ""} />
+                {total > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-sm ring-2 ring-rose-500/20">
-                        {total - lastSeenCount > 0 ? total - lastSeenCount : "!"}
+                        {total}
                     </span>
                 )}
             </button>
